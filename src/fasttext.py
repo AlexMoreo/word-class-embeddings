@@ -1,6 +1,5 @@
 import argparse
 from sklearn.model_selection import train_test_split
-from common import *
 from data.dataset import *
 from util.csv_log import CSVLog
 from util.file import create_if_not_exist

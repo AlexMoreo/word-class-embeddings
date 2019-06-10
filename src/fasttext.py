@@ -5,7 +5,6 @@ from util.csv_log import CSVLog
 from util.file import create_if_not_exist
 from util.metrics import *
 from time import time
-from embedding.pretrained import *
 from os.path import join
 from fastText import train_supervised
 

@@ -26,18 +26,12 @@ def main():
 
     analyzer = dataset.analyzer()
     devel = [' '.join(analyzer(t)) for t in tqdm(dataset.devel_raw, desc='indexing-devel')]
-
+    test = [' '.join(analyzer(t)) for t in tqdm(dataset.test_raw, desc='indexing-test')]
 
     # dataset split tr/val/test
-    if args.validation:
-        train, test, ytr, yte = train_test_split(devel, dataset.devel_target, test_size=.20, random_state=args.seed, shuffle=True)
-        print(f'validation mode: tr={len(train)} docs test(val)={len(test)} docs')
-    else:
-        train = devel
-        ytr = dataset.devel_target
-        test = [' '.join(analyzer(t)) for t in tqdm(dataset.test_raw, desc='indexing-test')]
-        yte = dataset.test_target
-        print(f'test mode: tr={len(train)} docs test={len(test)} docs')
+    train, val, ytr, yva = train_test_split(devel, dataset.devel_target, test_size=.20, random_state=args.seed, shuffle=True)
+    yte = dataset.test_target
+    print(f'tr={len(train)} va={len(val)} test={len(test)} docs')
 
     create_if_not_exist(args.dataset_dir)
     trainpath = get_input_file(train, ytr)
@@ -49,27 +43,31 @@ def main():
     )
     tend = time()-tinit
 
-    if dataset.classification_type=='multilabel':
-        yte_ = lil_matrix(yte.shape)
-        for i,t in tqdm(enumerate(test)):
+    predic_and_eval(model, val, yva, 'va', dataset.classification_type, logfile, tend)
+    predic_and_eval(model, test, yte, 'te', dataset.classification_type, logfile, tend)
+
+
+def predic_and_eval(model, x, y, metric_prefix, classification_type, logfile, tend):
+    if classification_type == 'multilabel':
+        y_ = lil_matrix(y.shape)
+        for i,t in tqdm(enumerate(x)):
             pred = model.f.predict(f'{t}\n', -1, 0.5, 'strict') #if any, returns a list of (probability, label)
             pred = np.array([int(l.replace('__label__','')) for prob,l in pred]) # take the index of the label
-            yte_[i,pred]=1
-        yte_ = yte_.tocsr()
+            y_[i,pred]=1
+        y_ = y_.tocsr()
     else:
-        yte_=np.zeros(len(test), dtype=int)
-        for i,t in tqdm(enumerate(test)):
+        y_=np.zeros(len(x), dtype=int)
+        for i,t in tqdm(enumerate(x)):
             pred = model.f.predict(f'{t}\n', 1, 0, 'strict') #get the most probable label
             prob,label = pred[0]
-            yte_[i] = int(label.replace('__label__',''))
+            y_[i] = int(label.replace('__label__',''))
 
-    # pickle.dump(yte_, open(f'../fasttext/{args.dataset}.labels.pickle','wb'), pickle.HIGHEST_PROTOCOL)
+    Mf1, mf1, acc = evaluation(y, y_, classification_type)
+    print(f'[{metric_prefix}] Macro-f1={Mf1:.3f} Micro-f1={mf1:.3f} Accuracy={acc:.3f} [took {tend}s]')
+    logfile.add_row(measure=f'{metric_prefix}-macro-F1', value=Mf1, timelapse=tend)
+    logfile.add_row(measure=f'{metric_prefix}-micro-F1', value=mf1, timelapse=tend)
+    logfile.add_row(measure=f'{metric_prefix}-accuracy', value=acc, timelapse=tend)
 
-    Mf1, mf1, acc = evaluation(yte, yte_, dataset.classification_type)
-    print(f'Macro-f1={Mf1:.3f} Micro-f1={mf1:.3f} Accuracy={acc:.3f} [took {tend}s]')
-    logfile.add_row(measure='te-macro-F1', value=Mf1, timelapse=tend)
-    logfile.add_row(measure='te-micro-F1', value=mf1, timelapse=tend)
-    logfile.add_row(measure='te-accuracy', value=acc, timelapse=tend)
 
 
 def as_fasttext_labels(y):
@@ -111,7 +109,6 @@ if __name__ == '__main__':
     parser.add_argument('--pickle-path', type=str, default=None, metavar='N', help=f'if set, specifies the path where to save/load the dataset pickled')
     parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
     parser.add_argument('--force', action='store_true', default=False, help='do not check if this experiment has already been run')
-    parser.add_argument('--validation', action='store_true', default=False, help='whether to split devel into train/val or use the entire devel for training')
 
 
     args = parser.parse_args()

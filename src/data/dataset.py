@@ -131,10 +131,12 @@ class Dataset:
         self.devel_labelmatrix, self.test_labelmatrix = _label_matrix(self.devel_target.reshape(-1,1), self.test_target.reshape(-1,1))
 
     def _load_fasttext_data(self,name):
-        data_path='/home/moreo/fasttext/fasttext-0.2.0/fastText/tests/data'
+        data_path='../datasets/fastText'
         self.classification_type = 'singlelabel'
         name=name.replace('-','_')
-        self.devel_raw, self.devel_target = load_fasttext_format(join(data_path,f'{name}.train'))
+        train_file = join(data_path,f'{name}.train')
+        assert os.path.exists(train_file), f'file {name} not found, please place the fasttext data in {data_path}' #' or specify the path' #todo
+        self.devel_raw, self.devel_target = load_fasttext_format(train_file)
         self.test_raw, self.test_target = load_fasttext_format(join(data_path, f'{name}.test'))
         self.devel_raw = mask_numbers(self.devel_raw)
         self.test_raw = mask_numbers(self.test_raw)

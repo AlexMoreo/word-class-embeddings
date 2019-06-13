@@ -247,7 +247,7 @@ def train(model, train_index, ytr, pad_index, tinit, logfile, criterion, optim, 
 
         if idx % opt.log_interval == 0:
             interval_loss = np.mean(loss_history[-opt.log_interval:])
-            print(f'{method_name} Epoch: {epoch}, Step: {idx}, Training Loss: {interval_loss:.6f}')
+            print(f'{opt.dataset} {method_name} Epoch: {epoch}, Step: {idx}, Training Loss: {interval_loss:.6f}')
 
     mean_loss = np.mean(interval_loss)
     logfile.add_row(epoch=epoch, measure='tr_loss', value=mean_loss, timelapse=time() - tinit)
@@ -329,7 +329,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=100, metavar='N', help='input batch size (default: 200)')
     parser.add_argument('--batch-size-test', type=int, default=250, metavar='N', help='batch size for testing (default: 250)')
     parser.add_argument('--nepochs', type=int, default=200, metavar='N', help='number of epochs (default: 100)')
-    parser.add_argument('--patience', type=int, default=10, metavar='N', help='patience for early-stop (default: 10)')
+    parser.add_argument('--patience', type=int, default=5, metavar='N', help='patience for early-stop (default: 5)')
     # parser.add_argument('--stop', type=str, default='earlystop', metavar='N', help='stopping policy; should either be '
     #                        '"earlystop" (in which case stops when <patience> validation steps show no improvement) or '
     #                        '"epochs" (in which case stops when the <nepochs> have ended)')

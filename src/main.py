@@ -22,7 +22,6 @@ from util.metrics import *
 from time import time
 from embedding.pretrained import *
 
-#TODO: repair macrof1 [switched to sklearn's implementation]
 #TODO: other embeddings (unsupervised: FASTTEXT, SentiWordNet?; supervised: ?)
 #TODO: control vocabulary (max-size 200k? drop GloVe? min_df=1?)
 
@@ -69,10 +68,12 @@ def set_method_name():
                 method_name+='-all'
             elif opt.predict_missing:
                 method_name += '-miss'
+        if opt.sup_drop > 0:
+            method_name += '-sdrop'
+        # if opt.dataset in ['wipo-sl-sc','jrcall']:
+        #     method_name+='-svd-normal'
     if opt.sentiment:
         method_name += '-sent'
-    if opt.sup_drop > 0:
-        method_name += '-sdrop'
     if opt.weight_decay > 0:
         method_name+=f'_wd{opt.weight_decay}'
     if opt.net in {'lstm', 'attn'} and opt.hidden!=512:
@@ -326,9 +327,9 @@ if __name__ == '__main__':
     # Training settings
     parser = argparse.ArgumentParser(description='Text Classification with Embeddings')
     parser.add_argument('--dataset', type=str, default='reuters21578', metavar='N', help=f'dataset, one in {available_datasets}')
-    parser.add_argument('--batch-size', type=int, default=100, metavar='N', help='input batch size (default: 200)')
+    parser.add_argument('--batch-size', type=int, default=100, metavar='N', help='input batch size (default: 100)')
     parser.add_argument('--batch-size-test', type=int, default=250, metavar='N', help='batch size for testing (default: 250)')
-    parser.add_argument('--nepochs', type=int, default=200, metavar='N', help='number of epochs (default: 100)')
+    parser.add_argument('--nepochs', type=int, default=200, metavar='N', help='number of epochs (default: 200)')
     parser.add_argument('--patience', type=int, default=5, metavar='N', help='patience for early-stop (default: 5)')
     # parser.add_argument('--stop', type=str, default='earlystop', metavar='N', help='stopping policy; should either be '
     #                        '"earlystop" (in which case stops when <patience> validation steps show no improvement) or '

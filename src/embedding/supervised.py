@@ -21,7 +21,7 @@ def supervised_embeddings(X,Y):
     F = (X.T).dot(Y) / feat_prev.T
     # class_prev = Y.sum(axis=0)
     # F /= class_prev
-    F = zscores(F, axis=0)
+    # F = zscores(F, axis=0) # performed outside (after pca)
     return F
 
 #UNFAIR
@@ -72,6 +72,9 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
               f'Applying PCA(n_components={max_label_space})')
         pca = PCA(n_components=max_label_space)
         F = pca.fit(F).transform(F)
+        # F /= pca.singular_values_
+
+    F = zscores(F, axis=0)
 
     print(f'took {time() - tinit:.1f}s')
 

@@ -19,7 +19,7 @@ def plot(csv_file_path, dataset, index_by='epoch', plotdir='./plots', smooth_tr_
     for net in ['cnn', 'lstm', 'attn']:
         for measure in measures:
             if measure=='early-stop': continue
-            if measure.startswith('finalte'): continue
+            if measure.startswith('final-te'): continue
             measure_name = measure
             fig, ax = plt.subplots()
             sns.set_style("darkgrid")
@@ -40,7 +40,7 @@ def plot(csv_file_path, dataset, index_by='epoch', plotdir='./plots', smooth_tr_
                         score=baseline_results.value.values[0]
                         baseline_data.append((baseline_method,score))
 
-
+            added_baseline = False
             for method in methods:
                 if not method.startswith(net): continue
 
@@ -51,14 +51,14 @@ def plot(csv_file_path, dataset, index_by='epoch', plotdir='./plots', smooth_tr_
                 results = results.pivot_table(index=['run',index_by], values='value')
 
 
-                long_run = 0
+                long_run = 1
                 if long_run not in results.index: continue
                 results = results.loc[long_run] # only the first run
                 # results = results.pivot_table(index=[index_by], values='value', aggfunc=lambda x:(np.mean(x),np.std(x)))
 
                 if results.empty: continue
 
-                xs = results.index.values
+                xs = results.index.values.astype(int)
                 ys = results.values.flatten()
                 # ys=np.asarray(results.values.flatten().tolist())
                 # ys_mean, ys_std = ys[:,0], ys[:,1]
@@ -93,7 +93,7 @@ def plot(csv_file_path, dataset, index_by='epoch', plotdir='./plots', smooth_tr_
                 if stop_val:
                     last_color = p[-1].get_color()
                     ax.plot(stop_point, stop_val, 'o', color=last_color, markersize=10)
-                if baseline_data:
+                if baseline_data and not added_baseline:
                     for b_name, b_score in baseline_data:
                         xs_=[min(xs),max(xs)]
                         ys_=[b_score]*2
@@ -103,6 +103,7 @@ def plot(csv_file_path, dataset, index_by='epoch', plotdir='./plots', smooth_tr_
                                  horizontalalignment='right',
                                  verticalalignment='bottom',
                                  multialignment='right')
+                        added_baseline=True
 
 
                 ax.legend()
@@ -180,10 +181,10 @@ if __name__ == '__main__':
     numerical = CSVLog('../results/numerical.csv', ['dataset', 'method', 'runs', 'measure', 'mean', 'std', 'timelapse'], overwrite=True)
     for index_by in ['epoch']:
         # for dataset in Dataset.dataset_available:
-        for dataset in {'ag-news'}:#, 'amazon-review-full', 'amazon-review-polarity', 'yahoo-answers', 'yelp-review-full', 'yelp-review-polarity'}:
-            if dataset in ['imdb']: continue
-            csvpath = f'../log/{dataset}.csv'
-            # csvpath = f'../log/tmpimdb.csv'
+        for dataset in {'jrcall'}:#, 'amazon-review-full', 'amazon-review-polarity', 'yahoo-answers', 'yelp-review-full', 'yelp-review-polarity'}:
+            # if dataset in ['imdb']: continue
+            # csvpath = f'../log/{dataset}.hyper.csv'
+            csvpath = f'../log/jrcall.tmp.csv'
             print(f'plotting {dataset}')
             plot(csvpath, dataset, index_by, plotdir=f'../plots/{dataset}', baselines=baselines)
             # evaluation(csvpath, dataset, numerical)

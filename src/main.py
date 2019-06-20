@@ -68,8 +68,13 @@ def set_method_name():
                 method_name+='-all'
             elif opt.predict_missing:
                 method_name += '-miss'
-        if opt.sup_drop > 0:
-            method_name += '-sdrop'
+        # if opt.sup_drop == 0:
+        method_name += f'd{opt.sup_drop}'
+
+        method_name += opt.supervised_method
+        if opt.supervised_nozscore:
+            method_name += '-noZ'
+
         # if opt.dataset in ['wipo-sl-sc','jrcall']:
         #     method_name+='-svd-normal'
     if opt.sentiment:
@@ -102,13 +107,16 @@ def index_dataset(dataset, pretrained=None):
     devel_index = index(dataset.devel_raw, word2index, known_words, analyzer, unk_index, out_of_vocabulary)
     test_index = index(dataset.test_raw, word2index, known_words, analyzer, unk_index, out_of_vocabulary)
 
+    print('[indexing complete]')
     return word2index, out_of_vocabulary, unk_index, pad_index, devel_index, test_index
 
 
 def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabulary):
+    print('[embedding matrix]')
     pretrained_embeddings = None
     sup_range = None
     if opt.pretrained or opt.supervised or opt.sentiment:
+        print('\t[pretrained-matrix]')
         pretrained_embeddings = []
         word_list = None
         if pretrained is not None:
@@ -119,9 +127,10 @@ def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabula
 
         sup_range = None
         if opt.supervised:
+            print('\t[supervised-matrix]')
             Xtr, _ = dataset.vectorize()
             Ytr = dataset.devel_labelmatrix
-            F = get_supervised_embeddings(Xtr, Ytr, binary_structural_problems=-1)
+            F = get_supervised_embeddings(Xtr, Ytr, binary_structural_problems=-1, method=opt.supervised_method, dozscore=not opt.supervised_nozscore)
 
             if (opt.predict_missing or opt.predict_all) and opt.pretrained:
                 F = fit_predict(weights, F, mode='all' if opt.predict_all else 'missing')
@@ -137,6 +146,7 @@ def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabula
             pretrained_embeddings.append(F)
 
         if opt.sentiment:
+            print('\t[sentiment-matrix]')
             sentiment_embedding = multi_domain_sentiment_embeddings()
             if word_list is None:
                 word_list = get_word_list(word2index, out_of_vocabulary)
@@ -149,6 +159,7 @@ def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabula
 
         pretrained_embeddings = torch.cat(pretrained_embeddings, dim=1)
 
+    print('[embedding matrix done]')
     return pretrained_embeddings, sup_range
 
 
@@ -169,11 +180,21 @@ def main():
         pretrained = Word2Vec(path=opt.word2vec_path, limit=1000000)
 
     dataset = Dataset.load(dataset_name=opt.dataset, pickle_path=opt.pickle_path).show()
-    word2index, out_of_vocabulary, unk_index, pad_index, devel_index, test_index = index_dataset(dataset, pretrained)
+    if opt.fullpickle and os.path.exists(opt.fullpickle):
+        print(f'loaded pre-computed index from {opt.fullpickle}')
+        word2index, out_of_vocabulary, unk_index, pad_index, devel_index, test_index = pickle.load(open(opt.fullpickle, 'rb'))
+    else:
+        word2index, out_of_vocabulary, unk_index, pad_index, devel_index, test_index = index_dataset(dataset, pretrained)
+        if opt.fullpickle:
+            print(f'dumping a full pickle in {opt.fullpickle}')
+            pickle.dump((word2index, out_of_vocabulary, unk_index, pad_index, devel_index, test_index), open(opt.fullpickle, 'wb'), pickle.HIGHEST_PROTOCOL)
+            print('[Done]')
 
     # dataset split tr/val/test
-    train_index, val_index, ytr, yval = train_test_split(devel_index, dataset.devel_target, test_size=.20, random_state=opt.seed, shuffle=True)
+    val_size = min(int(len(devel_index) * .2), 20000)
+    train_index, val_index, ytr, yval = train_test_split(devel_index, dataset.devel_target, test_size=val_size, random_state=opt.seed, shuffle=True)
     yte = dataset.test_target
+    print(ytr.mean())
 
     vocabsize = len(word2index) + len(out_of_vocabulary)
     pretrained_embeddings, sup_range = embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabulary)
@@ -237,6 +258,20 @@ def main():
 def train(model, train_index, ytr, pad_index, tinit, logfile, criterion, optim, epoch, method_name):
     as_long = isinstance(criterion, torch.nn.CrossEntropyLoss)
     loss_history = []
+    if opt.max_epoch_length is not None:
+        tr_len = len(train_index)
+        train_for = opt.max_epoch_length*opt.batch_size
+        from_,to_= (epoch*train_for) % tr_len, ((epoch+1)*train_for) % tr_len
+        print(f'epoch from {from_} to {to_}')
+        if to_ < from_:
+            train_index = train_index[from_:] + train_index[:to_]
+            if issparse(ytr):
+                ytr = vstack((ytr[from_:], ytr[:to_]))
+            else:
+                ytr = np.concatenate((ytr[from_:], ytr[:to_]))
+        else:
+            train_index=train_index[from_:to_]
+            ytr = ytr[from_:to_]
     model.train()
     for idx, (batch, target) in enumerate(batchify(train_index, ytr, opt.batch_size, pad_index, as_long)):
         optim.zero_grad()
@@ -331,11 +366,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size-test', type=int, default=250, metavar='N', help='batch size for testing (default: 250)')
     parser.add_argument('--nepochs', type=int, default=200, metavar='N', help='number of epochs (default: 200)')
     parser.add_argument('--patience', type=int, default=5, metavar='N', help='patience for early-stop (default: 5)')
-    # parser.add_argument('--stop', type=str, default='earlystop', metavar='N', help='stopping policy; should either be '
-    #                        '"earlystop" (in which case stops when <patience> validation steps show no improvement) or '
-    #                        '"epochs" (in which case stops when the <nepochs> have ended)')
     parser.add_argument('--plotmode', action='store_true', default=False, help='in plot mode executes a long run in order to'
-                                   'to generate enough data to produce trend plots (test-each should be >0, a finalte '
+                                   'to generate enough data to produce trend plots (test-each should be >0, a final-te '
                                    'is not performed)')
     parser.add_argument('--hidden', type=int, default=512, metavar='N', help='hidden lstm size (default: 512)')
     parser.add_argument('--channels', type=int, default=64, metavar='N', help='number of cnn out-channels (default: 64)')
@@ -348,9 +380,10 @@ if __name__ == '__main__':
     parser.add_argument('--test-each', type=int, default=0, metavar='N', help='how many epochs to wait before invoking test (default: 0, only at the end)')
     parser.add_argument('--checkpoint-dir', type=str, default='../checkpoint', metavar='N', help='path to the directory containing checkpoints')
     parser.add_argument('--net', type=str, default='lstm', metavar='N', help=f'net, one in {available_nets}')
-    # parser.add_argument('--glove', action='store_true', default=False, help='use GloVe embeddings')
     parser.add_argument('--pretrained', type=str, default=None, metavar='N', help='pretrained embeddings, use "glove" or "word2vec" (default None)')
     parser.add_argument('--supervised', action='store_true', default=False, help='use supervised embeddings')
+    parser.add_argument('--supervised-method', type=str, default='dot', metavar='N', help='method used to create the supervised matrix')
+    parser.add_argument('--supervised-nozscore', action='store_true', default=False, help='avoid z-score all cat-dimensions')
     parser.add_argument('--sentiment', action='store_true', default=False, help='use supervised embeddings')
     parser.add_argument('--predict-missing', action='store_true', default=False, help='predict supervised embedding for out-of-vocabulary')
     parser.add_argument('--predict-all', action='store_true', default=False, help='predict supervised embedding for all words in vocabulary')
@@ -364,8 +397,12 @@ if __name__ == '__main__':
     parser.add_argument('--max-label-space', type=int, default=300, metavar='N', help='larger dimension allowed for the '
                         'feature-label embedding (if larger, then PCA with this number of components is applied '
                         '(default 300)')
+    parser.add_argument('--max-epoch-length', type=int, default=None, metavar='N',
+                        help='number of (batched) training steps before considering an epoch over (None: full epoch)')
     parser.add_argument('--force', action='store_true', default=False, help='do not check if this experiment has already been run')
     parser.add_argument('--svm', action='store_true', default=False, help='use the learned vectors within a SVM')
+    parser.add_argument('--fullpickle', type=str, default=None, metavar='N', help=f'pickles the dataset and index for fast load (None)')
+
     # parser.add_argument('--word-drop', type=float, default=0, metavar='LR', help='word dropout probability (default: 0)')
 
     opt = parser.parse_args()
@@ -377,6 +414,7 @@ if __name__ == '__main__':
     assert opt.dataset in available_datasets, f'unknown dataset {opt.dataset}'
     assert opt.pretrained in {None, 'glove', 'word2vec'}, f'unknown pretrained set {opt.pretrained}'
     assert not opt.plotmode or opt.test_each > 0, 'plot mode implies --test-each>0'
+    assert opt.supervised_method in ['dot','pmi', 'ig', 'pnig', 'dotn', 'dotc']
 
     if opt.pickle_dir: opt.pickle_path=join(opt.pickle_dir,f'{opt.dataset}.pickle')
 

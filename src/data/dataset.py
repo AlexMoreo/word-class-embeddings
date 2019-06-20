@@ -156,8 +156,8 @@ class Dataset:
         data_path = '../datasets/WIPO/wipo-gamma/en'
         data_proc = '../datasets/WIPO-extracted'
 
-        devel = fetch_WIPOgamma(subset='train', classification_level=classlevel, data_home=data_path, extracted_path=data_proc)
-        test  = fetch_WIPOgamma(subset='test', classification_level=classlevel, data_home=data_path, extracted_path=data_proc)
+        devel = fetch_WIPOgamma(subset='train', classification_level=classlevel, data_home=data_path, extracted_path=data_proc, text_fields=['abstract'])
+        test  = fetch_WIPOgamma(subset='test', classification_level=classlevel, data_home=data_path, extracted_path=data_proc, text_fields=['abstract'])
 
         devel_data = [d.text for d in devel]
         test_data  = [d.text for d in test]
@@ -210,6 +210,9 @@ class Dataset:
             else:
                 print(f'fetching dataset and dumping it into {pickle_path}')
                 dataset = Dataset(name=dataset_name)
+                print('vectorizing for faster processing')
+                dataset.vectorize()
+                print('dumping')
                 pickle.dump(dataset, open(pickle_path, 'wb', pickle.HIGHEST_PROTOCOL))
         else:
             print(f'loading dataset {dataset_name}')

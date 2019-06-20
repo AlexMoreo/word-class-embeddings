@@ -79,9 +79,10 @@ def extract(fin, fout, text_fields, limit_description):
                 xmlcontent = zipfile.open(xmlfile).read()
                 document = parse_document(xmlcontent, text_fields, limit_description)
                 if document:
-                    line_text = document.text.replace('\n', ' ').replace('\t', ' ')
-                    line_secgroups = ' '.join(document.secondary_groups)
-                    out.write('\t'.join([document.id, document.main_group, line_secgroups, line_text]))
+                    line_text = document.text.replace('\n', ' ').replace('\t', ' ').strip()
+                    assert line_text, f'empty document in {xmlfile}'
+                    all_labels = ' '.join(document.all_labels)
+                    out.write('\t'.join([document.id, document.main_label, all_labels, line_text]))
                     out.write('\n')
                     ndocs+=1
             out.flush()
@@ -140,7 +141,7 @@ class LabelCut:
 
 
 
-def fetch_WIPOgamma(subset, classification_level, data_home, extracted_path, text_fields = ('abstract', 'description'), limit_description=300):
+def fetch_WIPOgamma(subset, classification_level, data_home, extracted_path, text_fields = ['abstract', 'description'], limit_description=300):
     """
     Fetchs the WIPO-gamma dataset
     :param subset: 'train' or 'test' split
@@ -158,7 +159,8 @@ def fetch_WIPOgamma(subset, classification_level, data_home, extracted_path, tex
               f'since you need to request for permission. Please refer to {WIPO_URL}')
 
     create_if_not_exist(extracted_path)
-    config = f'{"-".join(text_fields)}-{limit_description}'
+    config = f'{"-".join(text_fields)}'
+    if 'description' in text_fields: config+='-{limit_description}'
     pickle_path=join(extracted_path, f'wipo-{subset}-{classification_level}-{config}.pickle')
     if exists(pickle_path):
         print(f'loading pickled file in {pickle_path}')
@@ -179,7 +181,7 @@ def fetch_WIPOgamma(subset, classification_level, data_home, extracted_path, tex
 
     train_request = []
     test_request  = []
-    pbar = tqdm(list_files(extracted_path))
+    pbar = tqdm([filename for filename in list_files(extracted_path) if filename.endswith(f'-{config}.txt')])
     labelcut = LabelCut(classification_level)
     errors=0
     for proc_file in pbar:
@@ -215,9 +217,9 @@ if __name__=='__main__':
     data_home = '../../datasets/WIPO/wipo-gamma/en'
     extracted_path = '../../datasets/WIPO-extracted'
 
-    train = fetch_WIPOgamma(subset='train', classification_level='subclass', data_home=data_home, extracted_path=extracted_path)
-    test = fetch_WIPOgamma(subset='test', classification_level='subclass', data_home=data_home, extracted_path=extracted_path)
-    train = fetch_WIPOgamma(subset='train', classification_level='maingroup', data_home=data_home, extracted_path=extracted_path)
-    test = fetch_WIPOgamma(subset='test', classification_level='maingroup', data_home=data_home, extracted_path=extracted_path)
+    train = fetch_WIPOgamma(subset='train', classification_level='subclass', data_home=data_home, extracted_path=extracted_path, text_fields=('abstract'))
+    test = fetch_WIPOgamma(subset='test', classification_level='subclass', data_home=data_home, extracted_path=extracted_path, text_fields=('abstract'))
+    # train = fetch_WIPOgamma(subset='train', classification_level='maingroup', data_home=data_home, extracted_path=extracted_path)
+    # test = fetch_WIPOgamma(subset='test', classification_level='maingroup', data_home=data_home, extracted_path=extracted_path)
 
     print('Done')

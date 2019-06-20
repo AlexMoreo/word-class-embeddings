@@ -16,7 +16,7 @@ stats = CSVLog(f'{outpath}/stats.csv',
                         'prev_mean', 'prev_std', 'prev_min', 'prev_max'],
                overwrite=False)
 
-for dataset_name in ['wipo-ml']:#Dataset.dataset_available:
+for dataset_name in ['wipo-sl-sc']:#:['ag-news', 'amazon-review-full', 'amazon-review-polarity', 'yahoo-answers', 'yelp-review-full', 'yelp-review-polarity']:#Dataset.dataset_available:
 
     # load dataset
     dataset = Dataset.load(dataset_name=dataset_name, pickle_path=f'../pickles/{dataset_name}.pickle')

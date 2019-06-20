@@ -5,6 +5,7 @@ import torchtext
 
 from data.dataset import init_vectorizer
 from data.sentiment import fetch_MDSunprocessed
+from data.tsr_function__ import get_supervised_matrix, get_tsr_matrix, posneg_information_gain, information_gain
 from model.embedding_predictor import EmbeddingPredictor
 from common import *
 from sklearn.decomposition import PCA
@@ -19,20 +20,37 @@ def zscores(x, axis=0): #scipy.stats.zscores does not avoid division by 0, which
 def supervised_embeddings(X,Y):
     feat_prev = (X > 0).sum(axis=0)
     F = (X.T).dot(Y) / feat_prev.T
-    # class_prev = Y.sum(axis=0)
-    # F /= class_prev
-    # F = zscores(F, axis=0) # performed outside (after pca)
     return F
 
-#UNFAIR
-# def supervised_embeddings(dataset):
-#     Xtr, Xte = dataset.vectorize()
-#     X = vstack([Xtr,Xte])
-#     Y = np.vstack((dataset.devel_labelmatrix, dataset.test_labelmatrix))
-#     feat_prev = (X > 0).sum(axis=0)
-#     F = (X.T).dot(Y) / feat_prev.T
-#     F = zscores(F, axis=0)
-#     return F
+def supervised_embeddings_tfidf(X,Y):
+    tfidf_norm = X.sum(axis=0)
+    F = (X.T).dot(Y) / tfidf_norm.T
+    return F
+
+def supervised_embeddings_tfidfc(X,Y):
+    tfidf_norm = X.sum(axis=0)
+    c_norm = Y.sum(axis=0)
+    F = (X.T).dot(Y)
+    F = F / tfidf_norm.T
+    F = F / c_norm
+    return F
+
+
+def supervised_embeddings_pmi(X,Y):
+    Xbin = X>0
+    D = X.shape[0]
+    Pxy = (Xbin.T).dot(Y)/D
+    Px = Xbin.sum(axis=0)/D
+    Py = Y.sum(axis=0)/D
+    F = np.asarray(Pxy/(Px.T*Py))
+    F = np.log1p(F)
+    return F
+
+def supervised_embeddings_tsr(X,Y, tsr_function=information_gain):
+    cell_matrix = get_supervised_matrix(X, Y)
+    F = get_tsr_matrix(cell_matrix, tsr_score_funtion=tsr_function).T
+    return F
+
 
 # def supervised_embeddings_tsr(dataset):
 #     print('computing supervised matrix with information gain')
@@ -44,7 +62,7 @@ def supervised_embeddings(X,Y):
 #
 #     return F
 
-def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_problems=-1):
+def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_problems=-1, method='dot', dozscore=True):
     print('computing supervised embeddings...')
     tinit = time()
 
@@ -65,16 +83,29 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
         # structural = (X[:,selected]>0)*1
         # Y=structural
 
-    F = supervised_embeddings(X, Y)
+    if method=='dot':
+        F = supervised_embeddings(X, Y)
+    elif method=='pmi':
+        F = supervised_embeddings_pmi(X, Y)
+    elif method == 'dotn':
+        F = supervised_embeddings_tfidf(X, Y)
+    elif method == 'dotc':
+        F = supervised_embeddings_tfidfc(X, Y)
+    elif method == 'ig':
+        F = supervised_embeddings_tsr(X, Y, information_gain)
+    elif method == 'pnig':
+        F = supervised_embeddings_tsr(X, Y, posneg_information_gain)
 
     if nC > max_label_space: #TODO: if predict_missing or predict_all, should it be done after of before?
         print(f'supervised matrix has more dimensions ({nC}) than the allowed limit {max_label_space}. '
               f'Applying PCA(n_components={max_label_space})')
         pca = PCA(n_components=max_label_space)
         F = pca.fit(F).transform(F)
-        # F /= pca.singular_values_
+        F /= pca.singular_values_
 
-    F = zscores(F, axis=0)
+    print(f'z-scoring {dozscore}')
+    if dozscore:
+        F = zscores(F, axis=0)
 
     print(f'took {time() - tinit:.1f}s')
 

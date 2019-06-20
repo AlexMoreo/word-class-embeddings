@@ -59,11 +59,12 @@ def tolatex(best, outpath):
                    'unigrams':'unigrams',
                    'tfidf':'tfidf'}
 
-    for value in ['te_macro_f1', 'te_micro_f1', 'stop_epoch']:
+    for value in ['te_macro_f1', 'te_micro_f1']:#, 'stop_epoch']:
         latex = best.df.pivot_table(index=['net', 'variant'], columns='dataset', values=value, aggfunc=lambda x: x)
         outfile = f'{outpath}/{value}.tex'
         latex.rename(columns=lambda c: '\\rotatebox{90}{'+dataset_nice.get(c,c.title())+'}', inplace=True)
         latex.rename(index=lambda c: method_nice.get(c, c.upper()), inplace=True)
+        latex=latex.reindex(index=['SVM','fastText','CNN','LSTM','ATTN'],level=0)
         print('=' * 80)
         print(latex)
         latex.to_latex(outfile, escape=False)

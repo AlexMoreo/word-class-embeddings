@@ -29,7 +29,8 @@ def main():
     test = [' '.join(analyzer(t)) for t in tqdm(dataset.test_raw, desc='indexing-test')]
 
     # dataset split tr/val/test
-    train, val, ytr, yva = train_test_split(devel, dataset.devel_target, test_size=.20, random_state=args.seed, shuffle=True)
+    val_size = min(int(len(devel) * .2), 20000)
+    train, val, ytr, yva = train_test_split(devel, dataset.devel_target, test_size=val_size, random_state=args.seed, shuffle=True)
     yte = dataset.test_target
     print(f'tr={len(train)} va={len(val)} test={len(test)} docs')
 

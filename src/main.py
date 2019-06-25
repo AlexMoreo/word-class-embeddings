@@ -5,14 +5,11 @@ import torch.nn as nn
 from torch.nn import functional as F
 from sklearn.model_selection import train_test_split
 import scipy
-# from baselines import svm_performance
 from baselines import svm_performance
 from embedding.supervised import get_supervised_embeddings, fit_predict, multi_domain_sentiment_embeddings
 from model.cnn_class import CNN
-# from model.common_ import init_Net
 from model.lstm_attn_class import AttentionModel
 from model.lstm_class import LSTMClassifier
-from model.transformer import TransformerEncoder
 from util.early_stop import EarlyStopping
 from common import *
 from data.dataset import *
@@ -69,14 +66,12 @@ def set_method_name():
             elif opt.predict_missing:
                 method_name += '-miss'
         # if opt.sup_drop == 0:
-        method_name += f'd{opt.sup_drop}'
+        method_name += f'-d{opt.sup_drop}'
 
-        method_name += opt.supervised_method
+        method_name += f'-{opt.supervised_method}'
         if opt.supervised_nozscore:
             method_name += '-noZ'
 
-        # if opt.dataset in ['wipo-sl-sc','jrcall']:
-        #     method_name+='-svd-normal'
     if opt.sentiment:
         method_name += '-sent'
     if opt.weight_decay > 0:

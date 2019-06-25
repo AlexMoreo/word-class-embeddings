@@ -181,15 +181,16 @@ if __name__ == '__main__':
     numerical = CSVLog('../results/numerical.csv', ['dataset', 'method', 'runs', 'measure', 'mean', 'std', 'timelapse'], overwrite=True)
     for index_by in ['epoch']:
         # for dataset in Dataset.dataset_available:
-        for dataset in {'jrcall'}:#, 'amazon-review-full', 'amazon-review-polarity', 'yahoo-answers', 'yelp-review-full', 'yelp-review-polarity'}:
+        for dataset in {'reuters21578','20newsgroups','rcv1','ohsumed','jrcall', 'wipo-sl-sc'}:#, 'amazon-review-full', 'amazon-review-polarity', 'yahoo-answers', 'yelp-review-full', 'yelp-review-polarity'}:
             # if dataset in ['imdb']: continue
-            # csvpath = f'../log/{dataset}.hyper.csv'
-            csvpath = f'../log/jrcall.tmp.csv'
+            csvpath = f'../log/{dataset}.hyper.csv'
+            # csvpath = f'../log/jrcall.tmp.csv'
             print(f'plotting {dataset}')
             plot(csvpath, dataset, index_by, plotdir=f'../plots/{dataset}', baselines=baselines)
             # evaluation(csvpath, dataset, numerical)
 
-
+    import sys
+    sys.exit(0)
     baselines = baselines.rename(index=str, columns={"value": "mean"})
 
     baselines = baselines[baselines['measure'] != 'te-accuracy']

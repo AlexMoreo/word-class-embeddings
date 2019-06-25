@@ -88,6 +88,10 @@ if __name__ == '__main__':
     # parser.add_argument('--catprev', type=float, default=0, metavar='LR', help='category prevalence filter (all categories'
     #                          'with less prevalence will be removed) only for multi-label classification')
     parser.add_argument('--optimc', action='store_true', default=False, help='optimize the C parameter in the SVM')
+    parser.add_argument('--max-docs', type=int, default=25000, metavar='N',
+                        help='maximum number of training documents to submit to the classifier. If the actual number of '
+                             'training examples is higher, then at balanced undersampling is performed individually for '
+                             'each category (default 25000)')
     args = parser.parse_args()
 
     assert args.mode in ['tfidf', 'supervised'], 'unknown mode'

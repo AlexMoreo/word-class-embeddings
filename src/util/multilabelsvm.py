@@ -10,12 +10,13 @@ class MLSVC:
     Multi-Label Support Vector Machine, with individual optimizations per binary problem.
     """
 
-    def __init__(self, n_jobs=1, estimator=LinearSVC, *args, **kwargs):
+    def __init__(self, n_jobs=1, estimator=LinearSVC, undersampling_over=-1, *args, **kwargs):
         self.n_jobs = n_jobs
         self.args = args
         self.kwargs = kwargs
         self.verbose = False if 'verbose' not in self.kwargs else self.kwargs['verbose']
         self.estimator = estimator
+        self.undersampling_over = undersampling_over
 
     def fit(self, X, y, **grid_search_params):
         tini = time()
@@ -34,7 +35,17 @@ class MLSVC:
         for i in np.argwhere(prevalence==0).flatten():
             self.svms[i] = TrivialRejector()
 
-        self.svms = Parallel(n_jobs=self.n_jobs)(delayed(self.svms[c].fit)(X,y[:,c]) for c,svm in enumerate(self.svms))
+        # if the length of the dataset is larger than the undersampling_over value, then at most undersampling_over
+        # examples will be drawn, in a balanced manner whenever possible.
+        if self.undersampling_over > 0:
+            indexes = [self._undersample_balance(y[:,c], size=self.undersampling_over) for c in range(nC)]
+            self.svms = Parallel(n_jobs=self.n_jobs)(
+                delayed(self.svms[c].fit)(X[indexes[c]], y[:, c][indexes[c]]) for c, svm in enumerate(self.svms)
+            )
+        else:
+            self.svms = Parallel(n_jobs=self.n_jobs)(
+                delayed(self.svms[c].fit)(X,y[:,c]) for c,svm in enumerate(self.svms)
+            )
         self.training_time = time() - tini
 
     def predict(self, X):
@@ -50,8 +61,34 @@ class MLSVC:
     def best_params(self):
         return [svmi.best_params_ if isinstance(svmi, GridSearchCV) else None for svmi in self.svms]
 
+    def _undersample_balance(self, y, size):
+        ysize = y.size
+        if ysize <= size:
+            return np.ones_like(y)
+        positives = np.argwhere(y==1).flatten()
+        negatives = np.argwhere(y==0).flatten()
+        half = size // 2
+        n_positives = min(positives.size, half)
+        n_negatives = min(negatives.size, half)
+        if n_positives < half:
+            n_negatives = size-n_positives
+        elif n_negatives < half:
+            n_positives = size-n_negatives
+        return np.concatenate(
+            (np.random.choice(positives, size=n_positives, replace=False),
+            np.random.choice(negatives, size=n_negatives, replace=False))
+        )
+
+
+
 class TrivialRejector:
     def fit(self,*args,**kwargs): return self
     def predict(self, X): return np.zeros(X.shape[0])
     def predict_proba(self, X): return np.zeros(X.shape[0])
 
+
+X = np.random.rand(10,8)
+y = np.random.randint(0,2,(10,5))
+
+svm = MLSVC(undersampling_over=6)
+svm.fit(X,y)

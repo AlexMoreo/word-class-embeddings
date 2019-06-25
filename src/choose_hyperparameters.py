@@ -10,6 +10,7 @@ from util.file import list_files
 
 def process_method_name(method):
     method = method.replace('glove-sdrop', 'glove')
+    method = method.replace('supervisedd', 'supervised-d')
     method_parts = method.split('-')
     net = method_parts[0]
     method_variant = []
@@ -19,8 +20,8 @@ def process_method_name(method):
             method_variant.append(part)
         elif part=='supervised':
             method_variant.append(part)
-        elif part == 'sdrop':
-            method_variant.append(part)
+        # elif part == 'sdrop':
+        #     method_variant.append(part)
         else:
             params += part
     method_variant = '-'.join(method_variant)
@@ -44,7 +45,6 @@ def bold_best(dataset_sel):
     best_stop = np.argmin([float(v) for v in values])
     best_stop_str = f'{values[best_stop]}'
     best.df.loc[(best.df.dataset == dataset) & (best.df.stop_epoch == best_stop_str), 'stop_epoch'] = '\\textbf{' + best_stop_str + '}'
-
 
 
 def tolatex(best, outpath):
@@ -173,6 +173,7 @@ if __name__ == '__main__':
     best.flush()
 
     tolatex(best, '../results')
+
 
 
 

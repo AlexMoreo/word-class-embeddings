@@ -68,3 +68,7 @@ class CNN(nn.Module):
         all_out = torch.cat((max_out1, max_out2, max_out3), 1) # all_out.size() = (batch_size, num_kernels*out_channels)
         fc_in = self.dropout(all_out) # fc_in.size()) = (batch_size, num_kernels*out_channels)
         return fc_in
+
+    def finetune_pretrained(self):
+        self.pretrained_embeddings.requires_grad = True
+        self.pretrained_embeddings.weight.requires_grad = True

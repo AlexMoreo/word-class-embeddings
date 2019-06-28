@@ -38,3 +38,7 @@ class LSTMClassifier(nn.Module):
         output, (final_hidden_state, final_cell_state) = self.lstm(input, (h_0, c_0))
         return final_hidden_state[-1]
 
+    def finetune_pretrained(self):
+        self.pretrained_embeddings.requires_grad = True
+        self.pretrained_embeddings.weight.requires_grad = True
+

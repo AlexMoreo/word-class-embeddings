@@ -71,12 +71,13 @@ def set_method_name():
         method_name += f'-{opt.supervised_method}'
         if opt.supervised_nozscore:
             method_name += '-noZ'
-
+    if (opt.pretrained or opt.supervised) and opt.tunable:
+        method_name+='-tunable'
     if opt.sentiment:
         method_name += '-sent'
     if opt.weight_decay > 0:
         method_name+=f'_wd{opt.weight_decay}'
-    if opt.net in {'lstm', 'attn'} and opt.hidden!=512:
+    if opt.net in {'lstm', 'attn'}:
         method_name+=f'-h{opt.hidden}'
     if opt.net== 'cnn' and opt.channels!=64:
         method_name+=f'-ch{opt.channels}'
@@ -157,6 +158,8 @@ def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabula
     print('[embedding matrix done]')
     return pretrained_embeddings, sup_range
 
+def init_optimizer(model, lr):
+    return torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, weight_decay=opt.weight_decay)
 
 def main():
     # init the log-file
@@ -196,11 +199,11 @@ def main():
 
     # instantiate the net
     model = init_Net(dataset.nC, vocabsize, pretrained_embeddings, sup_range, tocuda=True)
-
-
+    if opt.tunable:
+        model.finetune_pretrained()
 
     # init the optimizer and criterion
-    optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), weight_decay=opt.weight_decay)
+    optim = init_optimizer(model, lr=opt.lr)
     #TODO: scheduler?
 
     if dataset.classification_type == 'multilabel':
@@ -223,7 +226,21 @@ def main():
         if opt.test_each>0 and epoch%opt.test_each==0 and epoch<opt.nepochs:
             test(model, test_index, yte, pad_index, dataset.classification_type, tinit, epoch, logfile, criterion, 'te')
 
-        if not opt.plotmode and early_stop.STOP: break
+        if early_stop.STOP:
+            print('[early-stop]')
+            if opt.finetune:
+                model = early_stop.restore_checkpoint()
+                nparams_before = count_parameters(model)
+                model.finetune_pretrained()
+                nparams_after = count_parameters(model)
+                optim = init_optimizer(model, lr=opt.lr/2)
+                early_stop.reinit_counter()
+                opt.finetune=False
+                opt.finetuning=True
+                print(f'[fine-tune] {nparams_before} -> {nparams_after} trainable parameters')
+                logfile.add_row(epoch=epoch, measure=f'fine-tuning', value=0, timelapse=time()-tinit)
+            elif not opt.plotmode:
+                break
 
     # restores the best model according to the Mf1 of the validation set (only when plotmode==False)
     if opt.plotmode==False:
@@ -236,7 +253,7 @@ def main():
         model = early_stop.restore_checkpoint()
         stoptime = early_stop.stop_time-tinit
         stopepoch = early_stop.best_epoch
-        logfile.add_row(epoch=stopepoch, measure=f'early-stop', value=0, timelapse=stoptime)
+        logfile.add_row(epoch=stopepoch, measure=f'early-stop', value=early_stop.best_score, timelapse=stoptime)
 
         # test
         print('Training complete: testing')
@@ -278,7 +295,7 @@ def train(model, train_index, ytr, pad_index, tinit, logfile, criterion, optim, 
 
         if idx % opt.log_interval == 0:
             interval_loss = np.mean(loss_history[-opt.log_interval:])
-            print(f'{opt.dataset} {method_name} Epoch: {epoch}, Step: {idx}, Training Loss: {interval_loss:.6f}')
+            print(f'{opt.dataset} {method_name}{" [finetuning]" if opt.finetuning else ""} Epoch: {epoch}, Step: {idx}, Training Loss: {interval_loss:.6f}')
 
     mean_loss = np.mean(interval_loss)
     logfile.add_row(epoch=epoch, measure='tr_loss', value=mean_loss, timelapse=time() - tinit)
@@ -365,7 +382,7 @@ if __name__ == '__main__':
                                    'to generate enough data to produce trend plots (test-each should be >0, a final-te '
                                    'is not performed)')
     parser.add_argument('--hidden', type=int, default=512, metavar='N', help='hidden lstm size (default: 512)')
-    parser.add_argument('--channels', type=int, default=64, metavar='N', help='number of cnn out-channels (default: 64)')
+    parser.add_argument('--channels', type=int, default=128, metavar='N', help='number of cnn out-channels (default: 128)')
     parser.add_argument('--lr', type=float, default=1e-3, metavar='LR', help='learning rate (default: 1e-3)')
     parser.add_argument('--weight_decay', type=float, default=0, metavar='LR', help='weight decay (default: 0)')
     parser.add_argument('--sup-drop', type=float, default=0.5, metavar='LR', help='dropout probability for the supervised matrix (default: 0.5)')
@@ -377,7 +394,7 @@ if __name__ == '__main__':
     parser.add_argument('--net', type=str, default='lstm', metavar='N', help=f'net, one in {available_nets}')
     parser.add_argument('--pretrained', type=str, default=None, metavar='N', help='pretrained embeddings, use "glove" or "word2vec" (default None)')
     parser.add_argument('--supervised', action='store_true', default=False, help='use supervised embeddings')
-    parser.add_argument('--supervised-method', type=str, default='dot', metavar='N', help='method used to create the supervised matrix')
+    parser.add_argument('--supervised-method', type=str, default='dotn', metavar='N', help='method used to create the supervised matrix')
     parser.add_argument('--supervised-nozscore', action='store_true', default=False, help='avoid z-score all cat-dimensions')
     parser.add_argument('--sentiment', action='store_true', default=False, help='use supervised embeddings')
     parser.add_argument('--predict-missing', action='store_true', default=False, help='predict supervised embedding for out-of-vocabulary')
@@ -393,10 +410,14 @@ if __name__ == '__main__':
                         'feature-label embedding (if larger, then PCA with this number of components is applied '
                         '(default 300)')
     parser.add_argument('--max-epoch-length', type=int, default=None, metavar='N',
-                        help='number of (batched) training steps before considering an epoch over (None: full epoch)')
+                        help='number of (batched) training steps before considering an epoch over (None: full epoch)') #300 for wipo-sl-sc
     parser.add_argument('--force', action='store_true', default=False, help='do not check if this experiment has already been run')
     parser.add_argument('--svm', action='store_true', default=False, help='use the learned vectors within a SVM')
     parser.add_argument('--fullpickle', type=str, default=None, metavar='N', help=f'pickles the dataset and index for fast load (None)')
+    parser.add_argument('--finetune', action='store_true', default=False,
+                        help='fine-tune supervised and pretrained embeddings once patience is exhausted (default False)')
+    parser.add_argument('--tunable', action='store_true', default=False,
+                        help='pretrained embeddings are tunable from the begining (default False)')
 
     # parser.add_argument('--word-drop', type=float, default=0, metavar='LR', help='word dropout probability (default: 0)')
 
@@ -410,7 +431,9 @@ if __name__ == '__main__':
     assert opt.pretrained in {None, 'glove', 'word2vec'}, f'unknown pretrained set {opt.pretrained}'
     assert not opt.plotmode or opt.test_each > 0, 'plot mode implies --test-each>0'
     assert opt.supervised_method in ['dot','pmi', 'ig', 'pnig', 'dotn', 'dotc']
+    assert not (opt.tunable and opt.finetune), 'tunable and finetune cannot be activated simultaneously'
 
     if opt.pickle_dir: opt.pickle_path=join(opt.pickle_dir,f'{opt.dataset}.pickle')
+    opt.finetuning=False
 
     main()

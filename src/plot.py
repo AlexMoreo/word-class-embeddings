@@ -51,7 +51,7 @@ def plot(csv_file_path, dataset, index_by='epoch', plotdir='./plots', smooth_tr_
                 results = results.pivot_table(index=['run',index_by], values='value')
 
 
-                long_run = 1
+                long_run = 0
                 if long_run not in results.index: continue
                 results = results.loc[long_run] # only the first run
                 # results = results.pivot_table(index=[index_by], values='value', aggfunc=lambda x:(np.mean(x),np.std(x)))
@@ -81,13 +81,6 @@ def plot(csv_file_path, dataset, index_by='epoch', plotdir='./plots', smooth_tr_
                         stop_val=ys[i]
                     else:
                         stop_val=None
-
-                # if smooth_tr_loss:# and measure=='tr_loss':
-                #     ys = smooth(ys)
-
-                # p = ax.plot(xs, ys_mean, '-', label=method)
-                # last_color = p[-1].get_color()
-                # ax.fill_between(xs, ys_mean - ys_std, ys_mean + ys_std, color=last_color, alpha=0.5)
 
                 p = ax.plot(xs, ys, '-', label=method)
                 if stop_val:
@@ -181,9 +174,9 @@ if __name__ == '__main__':
     numerical = CSVLog('../results/numerical.csv', ['dataset', 'method', 'runs', 'measure', 'mean', 'std', 'timelapse'], overwrite=True)
     for index_by in ['epoch']:
         # for dataset in Dataset.dataset_available:
-        for dataset in {'reuters21578','20newsgroups','rcv1','ohsumed','jrcall', 'wipo-sl-sc'}:#, 'amazon-review-full', 'amazon-review-polarity', 'yahoo-answers', 'yelp-review-full', 'yelp-review-polarity'}:
+        for dataset in ['reuters21578']:#, 'amazon-review-full', 'amazon-review-polarity', 'yahoo-answers', 'yelp-review-full', 'yelp-review-polarity'}:
             # if dataset in ['imdb']: continue
-            csvpath = f'../log/{dataset}.hyper.csv'
+            csvpath = f'../log/finetune.csv'
             # csvpath = f'../log/jrcall.tmp.csv'
             print(f'plotting {dataset}')
             plot(csvpath, dataset, index_by, plotdir=f'../plots/{dataset}', baselines=baselines)

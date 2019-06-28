@@ -85,3 +85,7 @@ class AttentionModel(torch.nn.Module):
         attn_output = self.attention_net(output, final_hidden_state)
         return attn_output
 
+    def finetune_pretrained(self):
+        self.pretrained_embeddings.requires_grad = True
+        self.pretrained_embeddings.weight.requires_grad = True
+

@@ -86,9 +86,3 @@ class TrivialRejector:
     def predict(self, X): return np.zeros(X.shape[0])
     def predict_proba(self, X): return np.zeros(X.shape[0])
 
-
-X = np.random.rand(10,8)
-y = np.random.randint(0,2,(10,5))
-
-svm = MLSVC(undersampling_over=6)
-svm.fit(X,y)

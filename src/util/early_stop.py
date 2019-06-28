@@ -41,6 +41,10 @@ class EarlyStopping:
                 if self.patience>0: # if negative, then early-stop is ignored
                     self.print(f'[early-stop] patience={self.patience}')
 
+    def reinit_counter(self):
+        self.STOP = False
+        self.patience=self.patience_limit
+
     def restore_checkpoint(self):
         return torch.load(self.checkpoint)
 

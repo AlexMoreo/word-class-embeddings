@@ -11,6 +11,7 @@ from util.file import list_files
 def process_method_name(method):
     method = method.replace('glove-sdrop', 'glove')
     method = method.replace('supervisedd', 'supervised-d')
+    method = method.replace('-learn', '-learn-d')
     method_parts = method.split('-')
     net = method_parts[0]
     method_variant = []
@@ -20,8 +21,8 @@ def process_method_name(method):
             method_variant.append(part)
         elif part=='supervised':
             method_variant.append(part)
-        # elif part == 'sdrop':
-        #     method_variant.append(part)
+        elif part=='learn':
+             method_variant.append(part)
         else:
             params += part
     method_variant = '-'.join(method_variant)
@@ -54,20 +55,27 @@ def tolatex(best, outpath):
                     'reuters21578':'Reuters-21578',
                     'wipo-sl-sc':'WIPO-gamma'}
     method_nice = {'glove':'GloVe',
-                   'glove-supervised-sdrop':'GloVe+Sup',
+                   'glove-supervised':'GloVe+Sup',
+                   'learn': 'Learnable',
                    'fasttext':'fastText',
                    'unigrams':'unigrams',
-                   'tfidf':'tfidf'}
+                   'tfidf':'tfidf',
+                   'SUP':'Sup'}
 
+    latex_str = []
     for value in ['te_macro_f1', 'te_micro_f1']:#, 'stop_epoch']:
         latex = best.df.pivot_table(index=['net', 'variant'], columns='dataset', values=value, aggfunc=lambda x: x)
-        outfile = f'{outpath}/{value}.tex'
+        # outfile = f'{outpath}/{value}.tex'
         latex.rename(columns=lambda c: '\\rotatebox{90}{'+dataset_nice.get(c,c.title())+'}', inplace=True)
         latex.rename(index=lambda c: method_nice.get(c, c.upper()), inplace=True)
-        latex=latex.reindex(index=['SVM','fastText','CNN','LSTM','ATTN'],level=0)
+        latex = latex.reindex(index=['SVM', 'fastText', 'CNN', 'LSTM', 'ATTN'], level=0)
         print('=' * 80)
         print(latex)
-        latex.to_latex(outfile, escape=False)
+        latex_str.append(latex.to_latex(buf=None, escape=False))
+    latex_str = '\n\n\\vspace{2cm}\n\n'.join(latex_str)
+    latex_str = '\\begin{minipage}{\\textwidth}\n' + latex_str + '\\end{minipage}'
+    latex_str=latex_str.replace('NaN', '---')
+    open(f'{outpath}/table.tex', 'wt').write(latex_str)
 
 
 if __name__ == '__main__':
@@ -81,7 +89,6 @@ if __name__ == '__main__':
     merge = []
     for dataset in dataset_results:
         csvpath = f'../log/{dataset}'
-        print(csvpath)
         df = pd.read_csv(csvpath, sep='\t')
         merge.append(df)
 
@@ -93,7 +100,7 @@ if __name__ == '__main__':
     df = pd.concat(merge)
     assert len(np.unique(df.run))==1, 'error, more than one run'
 
-    print(df)
+
     datasets = np.unique(df.dataset)
     nets=set()
     methods=set()

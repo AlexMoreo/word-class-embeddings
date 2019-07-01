@@ -12,6 +12,7 @@ def main():
 
     # init the log-file
     method_name = 'fasttext'
+    method_name += '-bigrams' if args.bigrams else '-unigrams'
     logfile = CSVLog(args.log_file, ['dataset', 'method', 'lr', 'learnable', 'nepochs', 'seed', 'measure', 'value', 'timelapse'], autoflush=True)
     logfile.set_default('dataset', args.dataset)
     logfile.set_default('method', method_name)
@@ -38,9 +39,10 @@ def main():
     trainpath = get_input_file(train, ytr)
 
     loss = 'ova' if dataset.classification_type=='multilabel' else 'softmax'
+    ngrams = 2 if args.bigrams else 1
     tinit = time()
     model = train_supervised(
-        input=trainpath, epoch=args.nepochs, lr=args.lr, wordNgrams=2, verbose=2, minCount=1, loss=loss, dim=args.learnable
+        input=trainpath, epoch=args.nepochs, lr=args.lr, wordNgrams=ngrams, verbose=2, minCount=1, loss=loss, dim=args.learnable
     )
     tend = time()-tinit
 
@@ -109,6 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset-dir', type=str, default='../fasttext/dataset', metavar='N', help='path to the directory where training files will be dumped')
     parser.add_argument('--pickle-path', type=str, default=None, metavar='N', help=f'if set, specifies the path where to save/load the dataset pickled')
     parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
+    parser.add_argument('--bigrams', action='store_true', default=False, help='set word n-grams to 2, bigrams (default: 1, unigrams)')
     parser.add_argument('--force', action='store_true', default=False, help='do not check if this experiment has already been run')
 
 

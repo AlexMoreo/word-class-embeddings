@@ -223,7 +223,7 @@ def main():
         # validation
         macrof1 = test(model, val_index, yval, pad_index, dataset.classification_type, tinit, epoch, logfile, criterion, 'va')
         early_stop(macrof1, epoch)
-        if opt.test_each>0 and epoch%opt.test_each==0 and epoch<opt.nepochs:
+        if opt.test_each>0 and (epoch-1)%opt.test_each==0 and epoch<opt.nepochs:
             test(model, test_index, yte, pad_index, dataset.classification_type, tinit, epoch, logfile, criterion, 'te')
 
         if early_stop.STOP:
@@ -243,6 +243,10 @@ def main():
                 break
 
     # restores the best model according to the Mf1 of the validation set (only when plotmode==False)
+    stoptime = early_stop.stop_time - tinit
+    stopepoch = early_stop.best_epoch
+    logfile.add_row(epoch=stopepoch, measure=f'early-stop', value=early_stop.best_score, timelapse=stoptime)
+
     if opt.plotmode==False:
         if opt.val_epochs>0:
             print(f'last {opt.val_epochs} epochs on the validation set')
@@ -251,9 +255,6 @@ def main():
 
         print('performing final evaluation')
         model = early_stop.restore_checkpoint()
-        stoptime = early_stop.stop_time-tinit
-        stopepoch = early_stop.best_epoch
-        logfile.add_row(epoch=stopepoch, measure=f'early-stop', value=early_stop.best_score, timelapse=stoptime)
 
         # test
         print('Training complete: testing')

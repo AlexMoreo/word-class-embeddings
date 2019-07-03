@@ -21,6 +21,8 @@ def process_method_name(method):
             method_variant.append(part)
         elif part=='supervised':
             method_variant.append(part)
+        elif part=='tunable':
+            method_variant.append(part)
         elif part=='learn':
              method_variant.append(part)
         else:
@@ -54,21 +56,35 @@ def tolatex(best, outpath):
                     'rcv1':'RCV1-v2',
                     'reuters21578':'Reuters-21578',
                     'wipo-sl-sc':'WIPO-gamma'}
-    method_nice = {'glove':'GloVe',
-                   'glove-supervised':'GloVe+Sup',
-                   'learn': 'Learnable',
+    method_nice = {'1glove':'GloVe (fix)',
+                   '4glove-supervised':'GloVe+Sup (fix)',
+                   '3glove-learn-tunable': 'GloVe+Rand',
+                   '5glove-supervised-tunable': 'GloVe+Sup',
+                   '2glove-tunable': 'GloVe',
+                   '0learn': 'Random',
                    'fasttext':'fastText',
                    'unigrams':'unigrams',
-                   'tfidf':'tfidf',
-                   'SUP':'Sup'}
+                   '0tfidf':'tfidf',
+                   '1Sup':'Sup'}
+    method_order = {'glove':'1glove',
+                   'glove-supervised':'4glove-supervised',
+                   'glove-learn-tunable': '3glove-learn-tunable',
+                   'glove-supervised-tunable': '5glove-supervised-tunable',
+                   'glove-tunable': '2glove-tunable',
+                   'learn': '0learn',
+                   'fasttext':'fasttext',
+                   'unigrams':'unigrams',
+                   'tfidf':'0tfidf',
+                   'Sup':'1Sup'}
 
     latex_str = []
     for value in ['te_macro_f1', 'te_micro_f1']:#, 'stop_epoch']:
         latex = best.df.pivot_table(index=['net', 'variant'], columns='dataset', values=value, aggfunc=lambda x: x)
-        # outfile = f'{outpath}/{value}.tex'
         latex.rename(columns=lambda c: '\\rotatebox{90}{'+dataset_nice.get(c,c.title())+'}', inplace=True)
+        latex.rename(index=lambda c: method_order.get(c, c), inplace=True)
+        latex = latex.sort_index(axis='index', level=1)
+        latex = latex.reindex(index=['svm', 'fasttext', 'cnn', 'lstm', 'attn'], level=0)
         latex.rename(index=lambda c: method_nice.get(c, c.upper()), inplace=True)
-        latex = latex.reindex(index=['SVM', 'fastText', 'CNN', 'LSTM', 'ATTN'], level=0)
         print('=' * 80)
         print(latex)
         latex_str.append(latex.to_latex(buf=None, escape=False))
@@ -100,7 +116,6 @@ if __name__ == '__main__':
     df = pd.concat(merge)
     assert len(np.unique(df.run))==1, 'error, more than one run'
 
-
     datasets = np.unique(df.dataset)
     nets=set()
     methods=set()
@@ -108,6 +123,7 @@ if __name__ == '__main__':
     # get the validation and test metrics for the stop point for all configurations
     for dataset in datasets:
         df_data = df_fasttext[df_fasttext.dataset==dataset]
+        df_data = df_data[df_data.method == 'fasttext-unigrams']
         if not df_data.empty:
             best_idx = df_data[df_data.measure=='va-macro-F1'].value.idxmax()
             best_params = df_fasttext.iloc[best_idx].params

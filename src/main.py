@@ -223,7 +223,7 @@ def main():
         # validation
         macrof1 = test(model, val_index, yval, pad_index, dataset.classification_type, tinit, epoch, logfile, criterion, 'va')
         early_stop(macrof1, epoch)
-        if opt.test_each>0 and (epoch-1)%opt.test_each==0 and epoch<opt.nepochs:
+        if opt.test_each>0 and epoch%opt.test_each==0 and epoch<opt.nepochs:
             test(model, test_index, yte, pad_index, dataset.classification_type, tinit, epoch, logfile, criterion, 'te')
 
         if early_stop.STOP:

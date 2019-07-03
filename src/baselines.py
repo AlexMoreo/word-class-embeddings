@@ -52,7 +52,7 @@ def main():
         logfile.add_row(measure='te-accuracy', value=acc, timelapse=tend)
 
     else:
-        logfile.set_default('method', 'SVM-S-{"opC" if args.optimc else "default"}')
+        logfile.set_default('method', f'SVM-S-{"opC" if args.optimc else "default"}')
         assert not logfile.already_calculated(), f'baselines for {args.dataset} already calculated'
         tinit = time()
         Y = dataset.devel_labelmatrix

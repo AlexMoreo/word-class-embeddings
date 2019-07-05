@@ -5,7 +5,7 @@ import torchtext
 
 from data.dataset import init_vectorizer
 from data.sentiment import fetch_MDSunprocessed
-from data.tsr_function__ import get_supervised_matrix, get_tsr_matrix, posneg_information_gain, information_gain
+from data.tsr_function__ import get_supervised_matrix, get_tsr_matrix, posneg_information_gain, information_gain, chi_square, gss
 from model.embedding_predictor import EmbeddingPredictor
 from common import *
 from sklearn.decomposition import PCA
@@ -62,7 +62,7 @@ def supervised_embeddings_tsr(X,Y, tsr_function=information_gain):
 #
 #     return F
 
-def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_problems=-1, method='dot', dozscore=True):
+def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_problems=-1, method='dotn', dozscore=True):
     print('computing supervised embeddings...')
     tinit = time()
 
@@ -95,6 +95,10 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
         F = supervised_embeddings_tsr(X, Y, information_gain)
     elif method == 'pnig':
         F = supervised_embeddings_tsr(X, Y, posneg_information_gain)
+    elif method == 'chi2':
+        F = supervised_embeddings_tsr(X, Y, chi_square)
+    elif method == 'gss':
+        F = supervised_embeddings_tsr(X, Y, gss)
 
     if nC > max_label_space: #TODO: if predict_missing or predict_all, should it be done after of before?
         print(f'supervised matrix has more dimensions ({nC}) than the allowed limit {max_label_space}. '

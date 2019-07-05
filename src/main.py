@@ -223,8 +223,9 @@ def main():
         # validation
         macrof1 = test(model, val_index, yval, pad_index, dataset.classification_type, tinit, epoch, logfile, criterion, 'va')
         early_stop(macrof1, epoch)
-        if opt.test_each>0 and epoch%opt.test_each==0 and epoch<opt.nepochs:
-            test(model, test_index, yte, pad_index, dataset.classification_type, tinit, epoch, logfile, criterion, 'te')
+        if opt.test_each>0:
+            if (opt.plotmode and (epoch==1 or epoch%opt.test_each==0)) or (not opt.plotmode and epoch%opt.test_each==0 and epoch<opt.nepochs):
+                test(model, test_index, yte, pad_index, dataset.classification_type, tinit, epoch, logfile, criterion, 'te')
 
         if early_stop.STOP:
             print('[early-stop]')
@@ -431,7 +432,7 @@ if __name__ == '__main__':
     assert opt.dataset in available_datasets, f'unknown dataset {opt.dataset}'
     assert opt.pretrained in {None, 'glove', 'word2vec'}, f'unknown pretrained set {opt.pretrained}'
     assert not opt.plotmode or opt.test_each > 0, 'plot mode implies --test-each>0'
-    assert opt.supervised_method in ['dot','pmi', 'ig', 'pnig', 'dotn', 'dotc']
+    assert opt.supervised_method in ['dot','pmi', 'ig', 'pnig', 'dotn', 'dotc', 'chi2', 'gss']
     assert not (opt.tunable and opt.finetune), 'tunable and finetune cannot be activated simultaneously'
 
     if opt.pickle_dir: opt.pickle_path=join(opt.pickle_dir,f'{opt.dataset}.pickle')

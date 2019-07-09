@@ -71,7 +71,13 @@ def supervised_embeddings_ig(X,Y):
 
     return accum.toarray()
 
-def supervised_embeddings_tsr(X,Y, tsr_function=information_gain):
+def supervised_embeddings_tsr(X,Y, tsr_function=information_gain, max_documents=25000):
+    D = X.shape[0]
+    if D>max_documents:
+        print(f'sampling {max_documents}')
+        random_sample = np.random.permutation(D)[:max_documents]
+        X = X[random_sample]
+        Y = Y[random_sample]
     cell_matrix = get_supervised_matrix(X, Y)
     F = get_tsr_matrix(cell_matrix, tsr_score_funtion=tsr_function).T
     return F
@@ -117,7 +123,7 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
     elif method == 'dotc':
         F = supervised_embeddings_tfidfc(X, Y)
     elif method == 'ig':
-        F = supervised_embeddings_ig(X, Y)
+        F = supervised_embeddings_tsr(X, Y, information_gain)
     elif method == 'pnig':
         F = supervised_embeddings_tsr(X, Y, posneg_information_gain)
     elif method == 'chi2':

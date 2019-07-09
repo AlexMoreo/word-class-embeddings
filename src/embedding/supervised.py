@@ -35,7 +35,6 @@ def supervised_embeddings_tfidfc(X,Y):
     F = F / c_norm
     return F
 
-
 def supervised_embeddings_pmi(X,Y):
     Xbin = X>0
     D = X.shape[0]
@@ -45,6 +44,32 @@ def supervised_embeddings_pmi(X,Y):
     F = np.asarray(Pxy/(Px.T*Py))
     F = np.log1p(F)
     return F
+
+def supervised_embeddings_ig(X,Y):
+    def factor(pxy,px,py):
+        den=px.T*py
+        den[den==0]=1
+        res=np.asarray(pxy/den)
+        res=np.log2(res)
+        res=pxy.multiply(res)
+        return res
+
+    D = X.shape[0]
+    Xpos = X > 0
+    Xneg = (X == 0)*1
+    Yneg = (Y == 0)*1
+
+    Px = Xpos.sum(axis=0)/D
+    Pnotx = 1-Px
+    Py = Y.sum(axis=0)/D
+    Pnoty = 1-Py
+
+    accum  = factor(pxy=(Xpos.T).dot(Y)/D, px=Px, py=Py)     #P(x,y)
+    accum += factor(pxy=(Xneg.T).dot(Y)/D, px=Pnotx, py=Py) #P(not x, y)
+    accum += factor(pxy=(Xpos.T).dot(Yneg)/D, px=Px, py=Pnoty) #P(x, not y)
+    accum += factor(pxy=(Xneg.T).dot(Yneg)/D, px=Pnotx, py=Pnoty) #P( not x, not y)
+
+    return accum.toarray()
 
 def supervised_embeddings_tsr(X,Y, tsr_function=information_gain):
     cell_matrix = get_supervised_matrix(X, Y)
@@ -92,7 +117,7 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
     elif method == 'dotc':
         F = supervised_embeddings_tfidfc(X, Y)
     elif method == 'ig':
-        F = supervised_embeddings_tsr(X, Y, information_gain)
+        F = supervised_embeddings_ig(X, Y)
     elif method == 'pnig':
         F = supervised_embeddings_tsr(X, Y, posneg_information_gain)
     elif method == 'chi2':
@@ -207,3 +232,22 @@ def multi_domain_sentiment_embeddings():
     return KeyedVectors(merge_vocabulary, merge_weights)
 
 
+if __name__=='__main__':
+    from scipy.sparse import csr_matrix
+
+    np.random.seed(1)
+    X = np.random.rand(100, 5)
+    X[X>0.7]=1.
+    X[X<=0.7]=0.
+    X = csr_matrix(X)
+
+    Y = np.random.rand(100, 4)
+    Y[Y>0.8]=1
+    Y[Y<=0.8]=0
+    Y = csr_matrix(Y)
+    S1 = supervised_embeddings_tsr(X, Y)
+    S2 = supervised_embeddings_ig(X, Y)
+    print(S1)
+    print(S2)
+    print(np.argsort(S1.flatten()))
+    print(np.argsort(S2.flatten()))

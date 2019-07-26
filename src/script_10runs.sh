@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source activate torch
 
 #--fullpickle ../pickles/$dataset-index.pickle
 

@@ -238,22 +238,22 @@ def multi_domain_sentiment_embeddings():
     return KeyedVectors(merge_vocabulary, merge_weights)
 
 
-if __name__=='__main__':
-    from scipy.sparse import csr_matrix
-
-    np.random.seed(1)
-    X = np.random.rand(100, 5)
-    X[X>0.7]=1.
-    X[X<=0.7]=0.
-    X = csr_matrix(X)
-
-    Y = np.random.rand(100, 4)
-    Y[Y>0.8]=1
-    Y[Y<=0.8]=0
-    Y = csr_matrix(Y)
-    S1 = supervised_embeddings_tsr(X, Y)
-    S2 = supervised_embeddings_ig(X, Y)
-    print(S1)
-    print(S2)
-    print(np.argsort(S1.flatten()))
-    print(np.argsort(S2.flatten()))
+# if __name__=='__main__':
+#     from scipy.sparse import csr_matrix
+#
+#     np.random.seed(1)
+#     X = np.random.rand(100, 5)
+#     X[X>0.7]=1.
+#     X[X<=0.7]=0.
+#     X = csr_matrix(X)
+#
+#     Y = np.random.rand(100, 4)
+#     Y[Y>0.8]=1
+#     Y[Y<=0.8]=0
+#     Y = csr_matrix(Y)
+#     S1 = supervised_embeddings_tsr(X, Y)
+#     S2 = supervised_embeddings_ig(X, Y)
+#     print(S1)
+#     print(S2)
+#     print(np.argsort(S1.flatten()))
+#     print(np.argsort(S2.flatten()))

@@ -62,9 +62,9 @@ def set_method_name():
         method_name += '-supervised'
         if (opt.predict_missing or opt.predict_all) and opt.pretrained:
             if opt.predict_all:
-                method_name+='-all'
+                method_name+='-all3' # 1 (ommitted) was the first version (500 epochs), 2 with 5000, 3 with val split
             elif opt.predict_missing:
-                method_name += '-miss'
+                method_name += '-miss3'
         # if opt.sup_drop == 0:
         method_name += f'-d{opt.sup_drop}'
 
@@ -107,7 +107,7 @@ def index_dataset(dataset, pretrained=None):
     return word2index, out_of_vocabulary, unk_index, pad_index, devel_index, test_index
 
 
-def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabulary):
+def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabulary, opt):
     print('[embedding matrix]')
     pretrained_embeddings = None
     sup_range = None
@@ -195,7 +195,7 @@ def main():
     print(ytr.mean())
 
     vocabsize = len(word2index) + len(out_of_vocabulary)
-    pretrained_embeddings, sup_range = embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabulary)
+    pretrained_embeddings, sup_range = embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabulary, opt)
 
     # instantiate the net
     model = init_Net(dataset.nC, vocabsize, pretrained_embeddings, sup_range, tocuda=True)
@@ -379,7 +379,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=100, metavar='N', help='input batch size (default: 100)')
     parser.add_argument('--batch-size-test', type=int, default=250, metavar='N', help='batch size for testing (default: 250)')
     parser.add_argument('--nepochs', type=int, default=200, metavar='N', help='number of epochs (default: 200)')
-    parser.add_argument('--patience', type=int, default=5, metavar='N', help='patience for early-stop (default: 5)')
+    parser.add_argument('--patience', type=int, default=10, metavar='N', help='patience for early-stop (default: 10)')
     parser.add_argument('--plotmode', action='store_true', default=False, help='in plot mode executes a long run in order to'
                                    'to generate enough data to produce trend plots (test-each should be >0, a final-te '
                                    'is not performed)')

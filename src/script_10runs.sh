@@ -4,7 +4,7 @@ source activate torch
 
 #--fullpickle ../pickles/$dataset-index.pickle
 
-for run in 1..9
+for run in {1..9}
 do
 dataset=20newsgroups
 python main.py --log-file ../log/10runs.csv  --dataset $dataset	--net cnn	--learnable 200	--channels 256 --seed $run

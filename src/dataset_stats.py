@@ -16,11 +16,10 @@ stats = CSVLog(f'{outpath}/stats.csv',
                         'prev_mean', 'prev_std', 'prev_min', 'prev_max'],
                overwrite=False)
 
-for dataset_name in ['wipo-sl-sc']:#:['ag-news', 'amazon-review-full', 'amazon-review-polarity', 'yahoo-answers', 'yelp-review-full', 'yelp-review-polarity']:#Dataset.dataset_available:
+for dataset_name in ['reuters21578', 'rcv1', 'jrcall', 'ohsumed', '20newsgroups']:
 
     # load dataset
     dataset = Dataset.load(dataset_name=dataset_name, pickle_path=f'../pickles/{dataset_name}.pickle')
-    # dataset.remove_categories(prevalence_threshold=0.05)
 
     print('vectorizing')
     Xtr, Xte = dataset.vectorize()
@@ -30,18 +29,17 @@ for dataset_name in ['wipo-sl-sc']:#:['ag-news', 'amazon-review-full', 'amazon-r
     nC = dataset.nC
 
     print('counting words')
-    # analyzer = dataset.analyzer()
-    # doc_words = [analyzer(t) for t in dataset.devel_raw + dataset.test_raw]
+    analyzer = dataset.analyzer()
     alldocs = dataset.devel_raw + dataset.test_raw
-    doc_words = [t.split() for t in tqdm(alldocs)]
-    nwords = sum([len(t) for t in tqdm(doc_words)])
     uniquewords = set()
-    for doc in tqdm(doc_words):
-        uniquewords.update(doc)
+    nwords = 0
+    for doc in tqdm(alldocs, 'analyzing words'):
+        doc_words = analyzer(doc)
+        uniquewords.update(doc_words)
+        nwords += len(doc_words)
     nunique = len(uniquewords)
-    # nunique = len(np.unique(list(itertools.chain.from_iterable(doc_words))))
-    prevalences = dataset.devel_labelmatrix.sum(axis=0)
 
+    prevalences = dataset.devel_labelmatrix.sum(axis=0)
 
     stats.add_row(dataset=dataset_name, ndocs=nD, nTr=nDtr, nTe=nDte, nfeats=nF, ncats=nC,
                   nwords=nwords, nunique=nunique,

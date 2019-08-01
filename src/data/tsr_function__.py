@@ -160,6 +160,31 @@ class ContTable:
         return self.fp / _c if _c > 0.0 else 0.0
 
 
+def round_robin_selection(X, Y, k, tsr_function=positive_information_gain):
+    print(f'[selectiong {k} terms]')
+    nC = Y.shape[1]
+    FC = get_tsr_matrix(get_supervised_matrix(X, Y), tsr_function).T
+    best_features_idx = np.argsort(-FC, axis=0).flatten()
+    tsr_values = FC.flatten()
+    selected_indexes_set = set()
+    selected_indexes = list()
+    selected_value = list()
+    from_category = list()
+    round_robin = iter(best_features_idx)
+    values_iter = iter(tsr_values)
+    round=0
+    while len(selected_indexes) < k:
+        term_idx = next(round_robin)
+        term_val = next(values_iter)
+        round=(round+1)%nC
+        if term_idx not in selected_indexes_set:
+            selected_indexes_set.add(term_idx)
+            selected_indexes.append(term_idx)
+            selected_value.append(term_val)
+            from_category.append(round)
+    return np.asarray(selected_indexes, dtype=int), np.asarray(selected_value, dtype=float), np.asarray(from_category)
+
+
 def feature_label_contingency_table(positive_document_indexes, feature_document_indexes, nD):
     tp_ = len(positive_document_indexes & feature_document_indexes)
     fp_ = len(feature_document_indexes - positive_document_indexes)

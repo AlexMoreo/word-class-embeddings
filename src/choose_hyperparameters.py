@@ -78,7 +78,7 @@ def tolatex(best, outpath):
                    'Sup':'1Sup'}
 
     latex_str = []
-    for value in ['te_macro_f1', 'te_micro_f1']:#, 'stop_epoch']:
+    for value in ['stop_epoch']:#'te_macro_f1', 'te_micro_f1']:#, 'stop_epoch']:
         latex = best.df.pivot_table(index=['net', 'variant'], columns='dataset', values=value, aggfunc=lambda x: x)
         latex.rename(columns=lambda c: '\\rotatebox{90}{'+dataset_nice.get(c,c.title())+'}', inplace=True)
         latex.rename(index=lambda c: method_order.get(c, c), inplace=True)

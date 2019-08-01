@@ -134,6 +134,7 @@ def preferred_names(method_name):
     method_name = method_name.replace('-ch256', '').replace('-h512', '')
     method_name = method_name.replace('-d0.5-dotn', '').replace('-d0.2-dotn', '')
     method_name = method_name.replace('-glove', '-GloVe').replace('-word2vec','-Word2Vec').replace('-supervised', '+Sup').replace('-learn200','+Rand')
+    method_name = method_name.replace('CNN+', 'CNN-').replace('LSTM+', 'LSTM-').replace('ATTN+', 'ATTN-')
     return method_name
 
 def plot_training_trends():
@@ -164,9 +165,9 @@ def plot_glove_vs_word2vec():
         print(f'plotting {dataset}')
         plot(csvpath, dataset, plotdir=f'{outpath}/{dataset}', methods=methods, preferred_names=preferred_names, xmax=100, measures=['te-macro-F1'])
 
-    methods = ['cnn-glove-ch256', 'cnn-glove-supervised-d0.2-dotn-ch256', 'cnn-word2vec-ch256','cnn-word2vec-supervised-d0.2-dotn-ch256',
-               'lstm-glove-h512', 'lstm-glove-supervised-d0.2-dotn-h512', 'lstm-word2vec-h512','lstm-word2vec-supervised-d0.2-dotn-h512',
-               'attn-glove-h512', 'attn-glove-supervised-d0.2-dotn-h512', 'attn-word2vec-h512','attn-word2vec-supervised-d0.2-dotn-h512']
+    methods = ['cnn-glove-ch256', 'cnn-glove-supervised-d0.5-dotn-ch256', 'cnn-word2vec-ch256','cnn-word2vec-supervised-d0.5-dotn-ch256',
+               'lstm-glove-h512', 'lstm-glove-supervised-d0.5-dotn-h512', 'lstm-word2vec-h512','lstm-word2vec-supervised-d0.5-dotn-h512',
+               'attn-glove-h512', 'attn-glove-supervised-d0.5-dotn-h512', 'attn-word2vec-h512','attn-word2vec-supervised-d0.5-dotn-h512']
     for dataset in ['wipo-sl-sc']:
         csvpath = f'../log/{dataset}.plot.csv'
         print(f'plotting {dataset}')
@@ -182,11 +183,11 @@ def plot_regularization():
     def preferred_names_reg(method_name):
         method_name = method_name.replace('cnn', 'CNN').replace('lstm', 'LSTM').replace('attn', 'ATTN')
         method_name = method_name.replace('-ch256', '').replace('-h512', '')
-        method_name = method_name.replace('-d0.5-dotn', '(d=0.5)').replace('-d0.2-dotn', '(d=0.2)').replace('-d0.8-dotn', '(d=0.8)').replace('-d0.0-dotn', '(d=0)')
+        method_name = method_name.replace('-d0.5-dotn', '(p=0.5)').replace('-d0.2-dotn', '(p=0.2)').replace('-d0.8-dotn', '(p=0.8)').replace('-d0.0-dotn', '(p=0.0)')
         method_name = method_name.replace('-glove', '-GloVe').replace('-supervised', '+Sup').replace('-learn200','+Rand')
         return method_name
 
-    for dataset in ['wipo-sl-sc','ohsumed', 'jrcall', 'rcv1', 'reuters21578', '20newsgroups']:
+    for dataset in ['rcv1']:#['wipo-sl-sc','ohsumed', 'jrcall', 'rcv1', 'reuters21578', '20newsgroups']:
         csvpath = f'../log/{dataset}.plot.csv'
         print(f'plotting {dataset}')
         plot(csvpath, dataset, plotdir=f'{outpath}/{dataset}', methods=methods, preferred_names=preferred_names_reg, xmax=100)
@@ -207,11 +208,14 @@ def plot_supervised_functions():
         return method_name
 
     for dataset in ['wipo-sl-sc', 'jrcall', 'rcv1', 'ohsumed', '20newsgroups', 'reuters21578']:
-        d=0.5
-        if dataset=='wipo-sl-sc':
-            d=0.2
+        methods=[]
+        for function in functions:
+            d=0.5
+            if dataset=='wipo-sl-sc' and function!='dotn':
+                  d=0.2
+            methods += [f'{net}-d{d}-{function}-{("ch256" if net.startswith("cnn") else "h512")}' for net in nets]
 
-        methods = [f'{net}-d{d}-{function}-{("ch256" if net.startswith("cnn") else "h512")}' for net in nets for function in functions]
+        # methods = [f'{net}-d{d if (dataset!="wipo-sl-sc" or function!="dotn") else 0.2}-{function}-{("ch256" if net.startswith("cnn") else "h512")}' for net in nets for function in functions]
         csvpath = f'../log/{dataset}.plot.csv'
         print(f'plotting {dataset}')
         plot(csvpath, dataset, plotdir=f'{outpath}/{dataset}', methods=methods, preferred_names=preferred_names, xmax=100, measures=['te-macro-F1'])
@@ -235,13 +239,13 @@ def plot_oov_predictions():
         methods = [f'{net}{function}-d{d}-dotn-{("ch256" if net.startswith("cnn") else "h512")}' for net in nets for function in functions]
         csvpath = f'../log/{dataset}.plot.csv'
         print(f'plotting {dataset}')
-        plot(csvpath, dataset, plotdir=f'{outpath}/{dataset}', methods=methods, preferred_names=preferred_names, xmax=100, measures=['te-macro-F1', 'te-micro-F1'])
+        plot(csvpath, dataset, plotdir=f'{outpath}/{dataset}', methods=methods, preferred_names=preferred_names, xmax=100)#, measures=['te-macro-F1', 'te-micro-F1'])
 
 
 if __name__ == '__main__':
     sns.set_context("talk")
     # plot_training_trends()
     # plot_glove_vs_word2vec()
-    # plot_regularization()
-    plot_supervised_functions()
+    plot_regularization()
+    # plot_supervised_functions()
     # plot_oov_predictions()

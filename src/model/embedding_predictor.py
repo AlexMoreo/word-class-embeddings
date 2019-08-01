@@ -6,17 +6,16 @@ from util.early_stop import EarlyStopping
 
 
 
-
-
 class EmbeddingPredictor(nn.Module):
     def __init__(self, input_size, output_size, hiddensize=64):
         super(EmbeddingPredictor, self).__init__()
         self.lin1 = nn.Linear(input_size, hiddensize)
+        self.drop = nn.Dropout(p=0.5)
         self.lin2 = nn.Linear(hiddensize, output_size)
 
     def forward(self, input):
         h = self.lin1(input)
-        h = F.relu(h)
+        h = self.drop(F.relu(h))
         o = self.lin2(h)
         return o
 
@@ -33,7 +32,7 @@ class EmbeddingPredictor(nn.Module):
         U,S = U[tr_index], S[tr_index]
 
         print(f'[learning to predict word-class embeddings from trU={U.shape}] and vaU={vU.shape}')
-        early_stop = EarlyStopping(self, patience=10, checkpoint=None, verbose=True)
+        early_stop = EarlyStopping(self, patience=20, verbose=False)
 
         epoch=0
         while not early_stop.STOP and epoch<nepochs:
@@ -58,10 +57,13 @@ class EmbeddingPredictor(nn.Module):
 
             tr_loss_mean, tr_loss_std = np.mean(tr_losses), np.std(tr_losses)
             va_loss_mean, va_loss_std = np.mean(va_losses), np.std(va_losses)
-            print(f'epoch {epoch}: tr_loss={tr_loss_mean:.5f} +-{tr_loss_std:.5f}\t va_loss={va_loss_mean:.5f} +-{va_loss_std:.5f}')
+            print(f'epoch {epoch}: tr_loss={tr_loss_mean:.5f} +-{tr_loss_std:.5f}\t va_loss={va_loss_mean:.5f} +-{va_loss_std:.5f} [patience={early_stop.patience}]')
             if epoch>5:
                 early_stop(-va_loss_mean, epoch)
             epoch+=1
+        chekpoint = early_stop.restore_checkpoint()
+        self.lin1 = chekpoint.lin1
+        self.lin2 = chekpoint.lin2
 
     def batchify(self, U, S, batchsize):
         size = U.shape[0]
@@ -73,8 +75,8 @@ class EmbeddingPredictor(nn.Module):
             yield batch_u, batch_s
 
     def predict(self, U):
+        self.eval()
         U = U.cuda()
         return self.forward(U).detach().cpu().numpy() #todo: batchify
-        # return F.relu(self.lin1(U)).detach().cpu().numpy()
 
 

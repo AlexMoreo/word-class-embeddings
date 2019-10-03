@@ -6,8 +6,10 @@ import os.path
 import re
 import tarfile
 from sklearn.datasets import get_data_home
-from sklearn.externals.six.moves import html_parser
-from sklearn.externals.six.moves import urllib
+# from sklearn.externals.six.moves import html_parser
+# from sklearn.externals.six.moves import urllib
+from six.moves import html_parser
+from six.moves import urllib
 import pickle
 from glob import glob
 import numpy as np

@@ -1,17 +1,14 @@
 import argparse
-import torch
-import torchtext
 import torch.nn as nn
-from torch.nn import functional as F
 from sklearn.model_selection import train_test_split
 import scipy
-from baselines import svm_performance
+from svm_baselines import cls_performance
 from embedding.supervised import get_supervised_embeddings, fit_predict, multi_domain_sentiment_embeddings
 from model.cnn_class import CNN
 from model.lstm_attn_class import AttentionModel
 from model.lstm_class import LSTMClassifier
 from util.early_stop import EarlyStopping
-from common import *
+from util.common import *
 from data.dataset import *
 from util.csv_log import CSVLog
 from util.file import create_if_not_exist
@@ -19,8 +16,6 @@ from util.metrics import *
 from time import time
 from embedding.pretrained import *
 
-#TODO: other embeddings (unsupervised: FASTTEXT, SentiWordNet?; supervised: ?)
-#TODO: control vocabulary (max-size 200k? drop GloVe? min_df=1?)
 
 allowed_nets = {'cnn', 'lstm', 'attn'}
 
@@ -347,7 +342,7 @@ def test_svm(model, devel_index, Xtfidf_tr, ytr, test_index, Xtfidf_te, yte, pad
     Xtr = transform(model, devel_index, pad_index)
     Xte = transform(model, test_index, pad_index)
     print(f'Xtr.shape={Xtr.shape}')
-    Mf1, mf1, acc, tend = svm_performance(Xtr, ytr, Xte, yte, classification_type)
+    Mf1, mf1, acc, tend = cls_performance(Xtr, ytr, Xte, yte, classification_type)
     measure_prefix = 'te'
     timelapse = stoptime + tend
     logfile.set_default('method', f'SVM-{method_name}')
@@ -358,7 +353,7 @@ def test_svm(model, devel_index, Xtfidf_tr, ytr, test_index, Xtfidf_te, yte, pad
     Xtr = scipy.sparse.hstack((Xtr, Xtfidf_tr))
     Xte = scipy.sparse.hstack((Xte, Xtfidf_te))
     print(f'Xtr(concat).shape={Xtr.shape}')
-    Mf1, mf1, acc, tend = svm_performance(Xtr, ytr, Xte, yte, classification_type)
+    Mf1, mf1, acc, tend = cls_performance(Xtr, ytr, Xte, yte, classification_type)
     measure_prefix = 'te'
     timelapse = stoptime + tend
     logfile.set_default('method', f'SVMc-{method_name}')
@@ -432,7 +427,7 @@ if __name__ == '__main__':
     assert opt.dataset in available_datasets, f'unknown dataset {opt.dataset}'
     assert opt.pretrained in {None, 'glove', 'word2vec'}, f'unknown pretrained set {opt.pretrained}'
     assert not opt.plotmode or opt.test_each > 0, 'plot mode implies --test-each>0'
-    assert opt.supervised_method in ['dot','pmi', 'ig', 'pnig', 'dotn', 'dotc', 'chi2', 'gss']
+    assert opt.supervised_method in ['dot','pmi', 'ppmi', 'ig', 'pnig', 'dotn', 'dotc', 'chi2', 'gss']
     assert not (opt.tunable and opt.finetune), 'tunable and finetune cannot be activated simultaneously'
 
     if opt.pickle_dir: opt.pickle_path=join(opt.pickle_dir,f'{opt.dataset}.pickle')

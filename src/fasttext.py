@@ -5,8 +5,8 @@ from util.csv_log import CSVLog
 from util.file import create_if_not_exist
 from util.metrics import *
 from time import time
-from os.path import join
 from fastText import train_supervised
+
 
 def main():
 
@@ -70,7 +70,6 @@ def predic_and_eval(model, x, y, metric_prefix, classification_type, logfile, te
     logfile.add_row(measure=f'{metric_prefix}-macro-F1', value=Mf1, timelapse=tend)
     logfile.add_row(measure=f'{metric_prefix}-micro-F1', value=mf1, timelapse=tend)
     logfile.add_row(measure=f'{metric_prefix}-accuracy', value=acc, timelapse=tend)
-
 
 
 def as_fasttext_labels(y):

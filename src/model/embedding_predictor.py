@@ -1,12 +1,11 @@
 from torch.nn import functional as F
 from model.helpers import *
 import numpy as np
-
 from util.early_stop import EarlyStopping
 
 
-
 class EmbeddingPredictor(nn.Module):
+
     def __init__(self, input_size, output_size, hiddensize=64):
         super(EmbeddingPredictor, self).__init__()
         self.lin1 = nn.Linear(input_size, hiddensize)

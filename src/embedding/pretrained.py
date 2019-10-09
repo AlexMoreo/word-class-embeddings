@@ -4,7 +4,9 @@ import gensim
 import os
 import numpy as np
 
+
 class KeyedVectors:
+
     def __init__(self, word2index, weights):
         assert len(word2index)==weights.shape[0], 'wrong number of dimensions'
         index2word = {i:w for w,i in word2index.items()}
@@ -26,9 +28,13 @@ class KeyedVectors:
 
         extraction = np.zeros((v_size, dim))
         extraction[np.asarray(source_idx)] = self.weights[np.asarray(target_idx)]
+
         return extraction
 
+
+
 class PretrainedEmbeddings(ABC):
+
     def __init__(self):
         super().__init__()
 
@@ -51,8 +57,8 @@ class PretrainedEmbeddings(ABC):
         return source_idx, target_idx
 
 
-
 class GloVe(PretrainedEmbeddings):
+
     def __init__(self, setname='840B'):
         super().__init__()
         print(f'Loading GloVe pretrained vectors from torchtext')
@@ -73,6 +79,7 @@ class GloVe(PretrainedEmbeddings):
 
 
 class Word2Vec(PretrainedEmbeddings):
+
     def __init__(self, path, limit=None):
         super().__init__()
         print(f'Loading word2vec pretrained vectors from {path}')

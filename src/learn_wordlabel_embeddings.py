@@ -6,6 +6,7 @@ from embedding.supervised import get_supervised_embeddings
 from time import time
 import numpy as np
 
+
 def read_dataset():
     all_sentences, all_labels = [], []
     for line in tqdm(open(opt.input, 'rt').readlines(), f'loading {opt.input}'):
@@ -66,10 +67,6 @@ def write_embeddings(S, features, format='text'):
                 foo.write(f'{term} {str_vec}\n')
 
 
-def main():
-    sentences, labels = read_dataset()
-    S, features = compute_embeddings(sentences, labels)
-    write_embeddings(S, features)
 
 
 if __name__ == '__main__':
@@ -83,4 +80,6 @@ if __name__ == '__main__':
     requiredNamed.add_argument('-i', '--input', help='Input file path', required=True, type=str)
     opt = parser.parse_args()
 
-    main()
+    sentences, labels = read_dataset()
+    S, features = compute_embeddings(sentences, labels)
+    write_embeddings(S, features)

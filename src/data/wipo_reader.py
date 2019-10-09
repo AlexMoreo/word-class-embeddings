@@ -11,6 +11,7 @@ from joblib import Parallel, delayed
 
 WIPO_URL= 'https://www.wipo.int/classifications/ipc/en/ITsupport/Categorization/dataset/'
 
+
 class WipoGammaDocument:
     def __init__(self, id, text, main_label, all_labels):
         self.id = id
@@ -42,11 +43,6 @@ def parse_document(xml_content, text_fields, limit_description):
     assert len(main_group) == 1, 'more than one main groups'
     main_group = list(main_group)[0]
     sec_groups = sorted(list(sec_groups))
-
-    # main_group = sorted(list(set(t.text[:6] for t in root.findall('.//bibliographic-data/technical-data/classifications-ipcr/classification-ipcr[@computed="from_ecla_to_ipc_MG"][@generated_main_IPC="true"]'))))
-    # sec_groups = sorted(list(set(t.text[:6] for t in root.findall('.//bibliographic-data/technical-data/classifications-ipcr/classification-ipcr[@computed="from_ecla_to_ipc_MG"][@generated_main_IPC="false"]'))))
-
-    # assert len(main_cats) == 1, 'more than one main class'
 
     assert lang == 'EN', f'only English documents allowed (doc {doc_id})'
 
@@ -88,16 +84,6 @@ def extract(fin, fout, text_fields, limit_description):
             out.flush()
 
 
-# wipo_pickle = 'wipo-gamma.pickle'
-# if not exists(wipo_pickle):
-# print(f'extracting {text_fields} from WIPO-gamma ({limit_description} words from description) [will take some minutes...]')
-# Parallel(n_jobs=-1)(delayed(extract)(join(data_path,file), join(data_path_out,file.replace('.zip','.txt'))) for file in list_files(data_path))
-
-    # pickle.dump(documents, open(wipo_pickle, 'wb'), pickle.HIGHEST_PROTOCOL)
-# else:
-#     print(f'loading {wipo_pickle}')
-#     with open(wipo_pickle, 'rb') as fo:
-#         documents = pickle.load(fo)
 
 def read_classification_file(data_path, classification_level):
     assert classification_level in ['subclass', 'maingroup'], 'wrong classification requested'
@@ -122,6 +108,7 @@ def read_classification_file(data_path, classification_level):
             target_subset.add(id)
 
     return document_labels, train_ids, test_ids
+
 
 class LabelCut:
     """

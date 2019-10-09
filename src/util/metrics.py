@@ -1,7 +1,7 @@
 import numpy as np
-from scipy.sparse import lil_matrix, csr_matrix, issparse
-from sklearn.metrics import f1_score, accuracy_score, precision_recall_fscore_support
-from sklearn.metrics.classification import _check_set_wise_labels, multilabel_confusion_matrix, _prf_divide
+from scipy.sparse import lil_matrix, issparse
+from sklearn.metrics import f1_score, accuracy_score
+
 
 """
 Scikit learn provides a full set of evaluation metrics, but they treat special cases differently.
@@ -12,21 +12,16 @@ classified all examples as negatives.
 """
 
 def evaluation(y_true, y_pred, classification_type):
+
     if classification_type == 'multilabel':
-        Mf1,mf1,accuracy = multilabel_eval(y_true, y_pred)
-        # Mf1 = f1_score(y_true, y_pred, average='macro') #TODO: repair
-        # p,r,f1,support=precision_recall_fscore_support(y_true, y_pred)
-        # f1[support==0]
-        # Mf1 = macro_f1_repaired(y_true, y_pred)
-        # mf1 = f1_score(y_true, y_pred, average='micro')
-        # accuracy = accuracy_score(y_true, y_pred)
+        eval_function = multilabel_eval
     elif classification_type == 'singlelabel':
-        if issparse(y_pred): y_pred=y_pred.toarray().flatten()
-        Mf1 = f1_score(y_true, y_pred, average='macro')
-        mf1 = f1_score(y_true, y_pred, average='micro')
-        accuracy = accuracy_score(y_true, y_pred)
+        eval_function = singlelabel_eval
+
+    Mf1, mf1, accuracy = eval_function(y_true, y_pred)
 
     return Mf1, mf1, accuracy
+
 
 def multilabel_eval(y, y_):
 
@@ -82,39 +77,10 @@ def multilabel_eval(y, y_):
     return macrof1,microf1,acc
 
 
-
-# def macro_f1_repaired(y_true, y_pred):
-#     beta = 1.0
-#     labels = None,
-#     pos_label = 1
-#     average='macro'
-#     sample_weight = None
-#     warn_for = ('f-score',)
-#
-#     labels = _check_set_wise_labels(y_true, y_pred, average, labels, pos_label)
-#
-#     # Calculate tp_sum, pred_sum, true_sum ###
-#     samplewise = average == 'samples'
-#     MCM = multilabel_confusion_matrix(y_true, y_pred, sample_weight=sample_weight, labels=labels, samplewise=samplewise)
-#     tp_sum = MCM[:, 1, 1]
-#     pred_sum = tp_sum + MCM[:, 0, 1]
-#     true_sum = tp_sum + MCM[:, 1, 0]
-#
-#     # Finally, we have all our sufficient statistics. Divide! #
-#     beta2 = beta ** 2
-#
-#     # Divide, and on zero-division, set scores to 0 and warn:
-#     precision = _prf_divide(tp_sum, pred_sum, 'precision', 'predicted', average, warn_for)
-#     recall = _prf_divide(tp_sum, true_sum, 'recall', 'true', average, warn_for)
-#     # Don't need to warn for F: either P or R warned, or tp == 0 where pos
-#     # and true are nonzero, in which case, F is well-defined and zero
-#     denom = beta2 * precision + recall
-#     denom[denom == 0.] = 1  # avoid division by 0
-#     f_score = (1 + beta2) * precision * recall / denom
-#
-#     f_score[(pred_sum==0)*(true_sum==0)]=1
-#     f_score = np.mean(f_score)
-#
-#     return f_score
-
+def singlelabel_eval(y, y_):
+    if issparse(y_): y_ = y_.toarray().flatten()
+    macrof1 = f1_score(y, y_, average='macro')
+    microf1 = f1_score(y, y_, average='micro')
+    acc = accuracy_score(y, y_)
+    return macrof1,microf1,acc
 

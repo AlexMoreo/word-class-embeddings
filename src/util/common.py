@@ -52,6 +52,7 @@ def define_pad_length(index_list):
     lengths = [len(index) for index in index_list]
     return int(np.mean(lengths)+np.std(lengths))
 
+
 def pad(index_list, pad_index, max_pad_length=None):
     pad_length = np.max([len(index) for index in index_list])
     if max_pad_length is not None:
@@ -60,6 +61,7 @@ def pad(index_list, pad_index, max_pad_length=None):
         index_list[i] = [pad_index]*(pad_length-len(indexes)) + indexes[:pad_length]
     return index_list
 
+
 def get_word_list(word2index1, word2index2=None): #TODO: redo
     def extract_word_list(word2index):
         return [w for w,i in sorted(word2index.items(), key=lambda x: x[1])]
@@ -67,6 +69,7 @@ def get_word_list(word2index1, word2index2=None): #TODO: redo
     if word2index2 is not None:
         word_list += extract_word_list(word2index2)
     return word_list
+
 
 def batchify(index_list, labels, batchsize, pad_index, target_long=False, max_pad_length=500):
     nsamples = len(index_list)
@@ -82,6 +85,7 @@ def batchify(index_list, labels, batchsize, pad_index, target_long=False, max_pa
         target = totype(batch_labels)
         yield batch.cuda(), target.cuda()
 
+
 def batchify_unlabelled(index_list, batchsize, pad_index, max_pad_length=500):
     nsamples = len(index_list)
     nbatches = nsamples // batchsize + 1*(nsamples%batchsize>0)
@@ -90,6 +94,7 @@ def batchify_unlabelled(index_list, batchsize, pad_index, max_pad_length=500):
         batch = pad(batch, pad_index=pad_index, max_pad_length=max_pad_length)
         batch = torch.LongTensor(batch)
         yield batch.cuda()
+
 
 def clip_gradient(model, clip_value=1e-1):
     params = list(filter(lambda p: p.grad is not None, model.parameters()))
@@ -106,6 +111,7 @@ def predict(logits, classification_type='singlelabel'):
         print('unknown classification type')
 
     return prediction.detach().cpu().numpy()
+
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)

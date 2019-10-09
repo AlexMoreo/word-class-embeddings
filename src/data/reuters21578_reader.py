@@ -6,8 +6,6 @@ import os.path
 import re
 import tarfile
 from sklearn.datasets import get_data_home
-# from sklearn.externals.six.moves import html_parser
-# from sklearn.externals.six.moves import urllib
 from six.moves import html_parser
 from six.moves import urllib
 import pickle
@@ -19,6 +17,7 @@ from data.labeled import LabelledDocuments
 def _not_in_sphinx():
     # Hack to detect whether we are running by the sphinx builder
     return '__file__' in globals()
+
 
 class ReutersParser(html_parser.HTMLParser):
     """Utility class to parse a SGML file and yield documents one at a time."""
@@ -182,7 +181,6 @@ def fetch_reuters21578(data_path=None, subset='train'):
     data = [(u'{title}\n{body}\n{unproc}'.format(**doc), doc['topics']) for doc in requested_subset['documents']]
     text_data, topics = zip(*data)
     return LabelledDocuments(data=text_data, target=topics, target_names=requested_subset['categories'])
-
 
 
 

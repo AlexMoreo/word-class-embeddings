@@ -2,13 +2,11 @@ import os
 import pickle
 import tarfile
 from os.path import join
-# from sklearn.externals.six.moves import urllib
 import urllib.request
-
 from data.labeled import LabelledDocuments
 from util.file import create_if_not_exist, download_file_if_not_exists
-
 import math
+
 
 def fetch_ohsumed50k(data_path=None, subset='train', train_test_split=0.7):
     _dataname = 'ohsumed50k'
@@ -62,3 +60,4 @@ def fetch_ohsumed50k(data_path=None, subset='train', train_test_split=0.7):
 
     print(pickle_file)
     return pickle.load(open(pickle_file, 'rb'))
+

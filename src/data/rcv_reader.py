@@ -53,12 +53,6 @@ def parse_document(xml_content, valid_id_range=None):
     if doc_headline is None or doc_headline in doc_title: doc_headline = ''
     text = '\n'.join([doc_title, doc_headline, doc_body]).strip()
 
-    # text_length = len(text.split())
-    # global nwords
-    # nwords.append(text_length)
-    # if text_length < min_words:
-    #     raise IDRangeException
-
     return RCV_Document(id=doc_id, text=text, categories=doc_categories, date=doc_date)
 
 
@@ -142,6 +136,8 @@ def fetch_topic_hierarchy(path, topics='all'):
 
 
 if __name__=='__main__':
+
+    # example
 
     RCV1_PATH = '../../datasets/RCV1-v2/unprocessed_corpus'
 

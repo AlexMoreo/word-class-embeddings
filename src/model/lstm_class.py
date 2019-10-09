@@ -22,7 +22,6 @@ class LSTMClassifier(nn.Module):
         self.label = nn.Linear(hidden_size, output_size)
 
     def forward(self, input):
-        """:param input: batch_size x document_length"""
         doc_embedding = self.transform(input)
         logits = self.label(doc_embedding)
         return logits

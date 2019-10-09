@@ -1,5 +1,5 @@
 import warnings
-from embedding.supervised import supervised_embeddings
+from embedding.supervised import supervised_embeddings_tfidf
 from util.multilabelsvm import MLSVC
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import argparse
@@ -33,6 +33,7 @@ def cls_performance(Xtr, ytr, Xte, yte, classification_type, optimizeC=True, est
     tend = time() - tinit
     return Mf1, mf1, acc, tend
 
+
 def main():
     logfile = CSVLog(args.log_file, ['dataset', 'method', 'measure', 'value', 'timelapse'], autoflush=True)
     logfile.set_default('dataset', args.dataset)
@@ -57,7 +58,7 @@ def main():
         assert not logfile.already_calculated(), f'baselines for {args.dataset} already calculated'
         tinit = time()
         Y = dataset.devel_labelmatrix
-        F = supervised_embeddings(Xtr, Y)
+        F = supervised_embeddings_tfidf(Xtr, Y)
         XFtr = Xtr.dot(F)
         XFte = Xte.dot(F)
         sup_tend = time()-tinit
@@ -69,12 +70,13 @@ def main():
 
     print('Done!')
 
+
 def _todense(y):
     return y.toarray() if issparse(y) else y
 
+
 def _tosparse(y):
     return y if issparse(y) else csr_matrix(y)
-
 
 
 if __name__ == '__main__':

@@ -239,6 +239,7 @@ def _label_matrix(tr_target, te_target):
     mlb = MultiLabelBinarizer(sparse_output=True)
     ytr = mlb.fit_transform(tr_target)
     yte = mlb.transform(te_target)
+    print(mlb.classes_)
     return ytr, yte
 
 

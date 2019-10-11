@@ -176,12 +176,12 @@ def round_robin_selection(X, Y, k, tsr_function=positive_information_gain):
     while len(selected_indexes) < k:
         term_idx = next(round_robin)
         term_val = next(values_iter)
-        round=(round+1)%nC
         if term_idx not in selected_indexes_set:
             selected_indexes_set.add(term_idx)
             selected_indexes.append(term_idx)
             selected_value.append(term_val)
             from_category.append(round)
+        round = (round + 1) % nC
     return np.asarray(selected_indexes, dtype=int), np.asarray(selected_value, dtype=float), np.asarray(from_category)
 
 

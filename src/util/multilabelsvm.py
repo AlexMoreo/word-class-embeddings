@@ -80,7 +80,6 @@ class MLSVC:
         )
 
 
-
 class TrivialRejector:
     def fit(self,*args,**kwargs): return self
     def predict(self, X): return np.zeros(X.shape[0])

@@ -1,16 +1,10 @@
-import numpy as np
-from time import time
-
-import torchtext
-
 from data.dataset import init_vectorizer
 from data.sentiment import fetch_MDSunprocessed
 from data.tsr_function__ import get_supervised_matrix, get_tsr_matrix, posneg_information_gain, information_gain, chi_square, gss
 from model.embedding_predictor import EmbeddingPredictor
-from common import *
+from util.common import *
 from sklearn.decomposition import PCA
-from scipy.sparse import hstack
-import os
+
 
 def zscores(x, axis=0): #scipy.stats.zscores does not avoid division by 0, which can indeed occur
     std = np.clip(np.std(x, axis=axis), 1e-5, None)
@@ -43,6 +37,17 @@ def supervised_embeddings_pmi(X,Y):
     Py = Y.sum(axis=0)/D
     F = np.asarray(Pxy/(Px.T*Py))
     F = np.log1p(F)
+    return F
+
+def supervised_embeddings_ppmi(X,Y):
+    Xbin = X>0
+    D = X.shape[0]
+    Pxy = (Xbin.T).dot(Y)/D
+    Px = Xbin.sum(axis=0)/D
+    Py = Y.sum(axis=0)/D
+    F = np.asarray(Pxy/(Px.T*Py))
+    F = np.maximum(F, 1.0)
+    F = np.log(F)
     return F
 
 def supervised_embeddings_ig(X,Y):
@@ -95,7 +100,7 @@ def supervised_embeddings_tsr(X,Y, tsr_function=information_gain, max_documents=
 
 def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_problems=-1, method='dotn', dozscore=True):
     print('computing supervised embeddings...')
-    tinit = time()
+    # tinit = time()
 
     nD,nF = X.shape
     nC = Y.shape[1]
@@ -118,6 +123,8 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
         F = supervised_embeddings(X, Y)
     elif method=='pmi':
         F = supervised_embeddings_pmi(X, Y)
+    elif method=='ppmi':
+        F = supervised_embeddings_ppmi(X, Y)
     elif method == 'dotn':
         F = supervised_embeddings_tfidf(X, Y)
     elif method == 'dotc':
@@ -138,11 +145,10 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
         F = pca.fit(F).transform(F)
         F /= pca.singular_values_
 
-    print(f'z-scoring {dozscore}')
     if dozscore:
         F = zscores(F, axis=0)
 
-    print(f'took {time() - tinit:.1f}s')
+    # print(f'took {time() - tinit}s')
 
     return F
 

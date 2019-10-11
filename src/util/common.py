@@ -47,17 +47,6 @@ def index(data, vocab, known_words, analyzer, unk_index, out_of_vocabulary):
                              f'[out = {out_count}/{knw_count}={(100.*out_count/knw_count):.2f}%]')
     return indexes
 
-# def stats(index_list):
-#     lenghts = []
-#     for indexes in tqdm(index_list):
-#         lenghts.extend([len(indexes) for text,_ in data[domain][collection]])
-#
-#     mu,std = np.mean(lenghts),np.std(lenghts)
-#     print(f'mean={mu:.3f}')
-#     print(f'std={std:.3f}')
-#     print(f'max={np.max(lenghts):.0f}')
-#     print(f'min={np.min(lenghts):.0f}')
-#     return mu,std
 
 def define_pad_length(index_list):
     lengths = [len(index) for index in index_list]

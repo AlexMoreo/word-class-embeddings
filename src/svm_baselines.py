@@ -1,5 +1,5 @@
 import warnings
-from embedding.supervised import supervised_embeddings
+from embedding.supervised import supervised_embeddings, supervised_embeddings_tfidf
 from util.multilabelsvm import MLSVC
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import argparse
@@ -57,7 +57,7 @@ def main():
         assert not logfile.already_calculated(), f'baselines for {args.dataset} already calculated'
         tinit = time()
         Y = dataset.devel_labelmatrix
-        F = supervised_embeddings(Xtr, Y)
+        F = supervised_embeddings_tfidf(Xtr, Y)
         XFtr = Xtr.dot(F)
         XFte = Xte.dot(F)
         sup_tend = time()-tinit

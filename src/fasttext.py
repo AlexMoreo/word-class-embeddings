@@ -87,6 +87,7 @@ def embedding_matrix(dataset, pretrained=False, supervised=False, random=0):
     return vocabulary, pretrained_embeddings
 
 
+
 def main():
 
     # init the log-file

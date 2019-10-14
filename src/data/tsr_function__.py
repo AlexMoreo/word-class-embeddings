@@ -17,15 +17,18 @@ def get_probs(tpr, fpr, pc):
     tn = pnc - fp
     return ContTable(tp=tp, fn=fn, fp=fp, tn=tn)
 
+
 def apply_tsr(tpr, fpr, pc, tsr):
     cell = get_probs(tpr, fpr, pc)
     return tsr(cell)
+
 
 def positive_information_gain(cell):
     if cell.tpr() < cell.fpr():
         return 0.0
     else:
         return information_gain(cell)
+
 
 def posneg_information_gain(cell):
     ig = information_gain(cell)
@@ -34,6 +37,7 @@ def posneg_information_gain(cell):
     else:
         return ig
 
+
 def __ig_factor(p_tc, p_t, p_c):
     den = p_t * p_c
     if den != 0.0 and p_tc != 0:
@@ -41,18 +45,22 @@ def __ig_factor(p_tc, p_t, p_c):
     else:
         return 0.0
 
+
 def information_gain(cell):
     return __ig_factor(cell.p_tp(), cell.p_f(), cell.p_c()) + \
            __ig_factor(cell.p_fp(), cell.p_f(), cell.p_not_c()) +\
            __ig_factor(cell.p_fn(), cell.p_not_f(), cell.p_c()) + \
            __ig_factor(cell.p_tn(), cell.p_not_f(), cell.p_not_c())
 
+
 def information_gain_mod(cell):
     return (__ig_factor(cell.p_tp(), cell.p_f(), cell.p_c()) + __ig_factor(cell.p_tn(), cell.p_not_f(), cell.p_not_c()))  \
            - (__ig_factor(cell.p_fp(), cell.p_f(), cell.p_not_c()) + __ig_factor(cell.p_fn(), cell.p_not_f(), cell.p_c()))
 
+
 def pointwise_mutual_information(cell):
     return __ig_factor(cell.p_tp(), cell.p_f(), cell.p_c())
+
 
 def gain_ratio(cell):
     pc = cell.p_c()
@@ -60,11 +68,13 @@ def gain_ratio(cell):
     norm = pc * math.log(pc, 2) + pnc * math.log(pnc, 2)
     return information_gain(cell) / (-norm)
 
+
 def chi_square(cell):
     den = cell.p_f() * cell.p_not_f() * cell.p_c() * cell.p_not_c()
     if den==0.0: return 0.0
     num = gss(cell)**2
     return num / den
+
 
 def relevance_frequency(cell):
     a = cell.tp
@@ -72,13 +82,16 @@ def relevance_frequency(cell):
     if c == 0: c = 1
     return math.log(2.0 + (a * 1.0 / c), 2)
 
+
 def idf(cell):
     if cell.p_f()>0:
         return math.log(1.0 / cell.p_f())
     return 0.0
 
+
 def gss(cell):
     return cell.p_tp()*cell.p_tn() - cell.p_fp()*cell.p_fn()
+
 
 def conf_interval(xt, n):
     if n>30:
@@ -94,6 +107,7 @@ def strength(minPosRelFreq, minPos, maxNeg):
         return math.log(2.0 * minPosRelFreq, 2.0)
     else:
         return 0.0
+
 
 #set cancel_features=True to allow some features to be weighted as 0 (as in the original article)
 #however, for some extremely imbalanced dataset caused all documents to be 0
@@ -118,7 +132,9 @@ def conf_weight(cell, cancel_features=False):
 
     return str_tplus;
 
+
 class ContTable:
+
     def __init__(self, tp=0, tn=0, fp=0, fn=0):
         self.tp=tp
         self.tn=tn
@@ -192,6 +208,7 @@ def feature_label_contingency_table(positive_document_indexes, feature_document_
     tn_ = nD - (tp_ + fp_ + fn_)
     return ContTable(tp=tp_, tn=tn_, fp=fp_, fn=fn_)
 
+
 def category_tables(feature_sets, category_sets, c, nD, nF):
     return [feature_label_contingency_table(category_sets[c], feature_sets[f], nD) for f in range(nF)]
 
@@ -223,6 +240,7 @@ def get_tsr_matrix(cell_matrix, tsr_score_funtion):
     nC,nF = cell_matrix.shape
     tsr_matrix = [[tsr_score_funtion(cell_matrix[c,f]) for f in range(nF)] for c in range(nC)]
     return np.array(tsr_matrix)
+
 
 """ The Fisher-score [1] is not computed on the 4-cell contingency table, but can
 take as input any real-valued feature column (e.g., tf-idf weights).

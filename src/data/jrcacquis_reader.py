@@ -227,9 +227,11 @@ def inspect_eurovoc(data_path, eurovoc_skos_core_concepts_filename='eurovoc_in_s
 
 if __name__ == '__main__':
 
+    # example code
+
     train_years = list(range(1986, 2006))
     test_years = [2006]
-    cat_policy = 'all'#'leaves'
+    cat_policy = 'all' #'leaves'
     most_common_cat = 300
     JRC_DATAPATH = "../datasets/JRC_Acquis_v3"
     cat_list = inspect_eurovoc(JRC_DATAPATH, select=cat_policy)
@@ -254,8 +256,8 @@ if __name__ == '__main__':
     print_cat_analysis(test_docs)
 
     """
-JRC-train: 12615 documents, 300 cats
-JRC-test: 7055 documents, 300 cats
+    JRC-train: 12615 documents, 300 cats
+    JRC-test: 7055 documents, 300 cats
     """
 
 

@@ -64,16 +64,16 @@ def embedding_matrix(dataset, pretrained=False, supervised=False, random=0):
     if pretrained:
         print('\t[pretrained-matrix: GloVe]')
         pretrained = GloVe()
-        weights = pretrained.extract(vocabulary).numpy()
-        pretrained_embeddings.append(weights)
+        P = pretrained.extract(vocabulary).numpy()
+        pretrained_embeddings.append(P)
         del pretrained
 
     if supervised:
         print('\t[supervised-matrix]')
         Xtr, _ = dataset.vectorize()
         Ytr = dataset.devel_labelmatrix
-        F = get_supervised_embeddings(Xtr, Ytr)
-        pretrained_embeddings.append(F)
+        S = get_supervised_embeddings(Xtr, Ytr)
+        pretrained_embeddings.append(S)
 
     if random>0:
         print('\t[random-vectors]')
@@ -95,7 +95,6 @@ def main():
     method_name += '-glove' if args.pretrained else ''
     method_name += '-rand' if args.pretrained and args.learnable>0 else ''
     method_name += '-sup' if args.supervised else ''
-    assert not(args.pretrained and args.supervised and args.learnable>0), 'this experiment was not supposed to be run!'
     logfile = CSVLog(args.log_file, ['dataset', 'method', 'lr', 'learnable', 'nepochs', 'seed', 'measure', 'value', 'timelapse'], autoflush=True)
     logfile.set_default('dataset', args.dataset)
     logfile.set_default('method', method_name)

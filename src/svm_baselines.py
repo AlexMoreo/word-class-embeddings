@@ -1,5 +1,5 @@
 import warnings
-from embedding.supervised import supervised_embeddings_tfidf
+from embedding.supervised import supervised_embeddings, supervised_embeddings_tfidf
 from util.multilabelsvm import MLSVC
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import argparse
@@ -12,6 +12,7 @@ from data.dataset import *
 from util.csv_log import CSVLog
 from time import time
 from scipy.sparse import issparse, csr_matrix
+from fasttext import embedding_matrix
 
 
 def cls_performance(Xtr, ytr, Xte, yte, classification_type, optimizeC=True, estimator=LinearSVC):
@@ -33,7 +34,6 @@ def cls_performance(Xtr, ytr, Xte, yte, classification_type, optimizeC=True, est
     tend = time() - tinit
     return Mf1, mf1, acc, tend
 
-
 def main():
     logfile = CSVLog(args.log_file, ['dataset', 'method', 'measure', 'value', 'timelapse'], autoflush=True)
     logfile.set_default('dataset', args.dataset)
@@ -45,28 +45,29 @@ def main():
     learner = LinearSVC if args.learner=='svm' else LogisticRegression
     learner_name = 'SVM' if args.learner=='svm' else 'LR'
 
-    if args.mode=='tfidf':
-        logfile.set_default('method', f'{learner_name}-tfidf-{"opC" if args.optimc else "default"}')
-        assert not logfile.already_calculated(), f'baselines for {args.dataset} already calculated'
-        Mf1, mf1, acc, tend = cls_performance(Xtr, ytr, Xte, yte, dataset.classification_type, args.optimc, learner)
-        logfile.add_row(measure='te-macro-F1', value=Mf1, timelapse=tend)
-        logfile.add_row(measure='te-micro-F1', value=mf1, timelapse=tend)
-        logfile.add_row(measure='te-accuracy', value=acc, timelapse=tend)
+    logfile.set_default('method', f'{learner_name}-{args.mode}-{"opC" if args.optimc else "default"}')
+    assert not logfile.already_calculated(), f'baselines for {args.dataset} already calculated'
 
+    if args.mode=='tfidf':
+        sup_tend=0
     else:
-        logfile.set_default('method', f'{learner_name}-S-{"opC" if args.optimc else "default"}')
-        assert not logfile.already_calculated(), f'baselines for {args.dataset} already calculated'
         tinit = time()
-        Y = dataset.devel_labelmatrix
-        F = supervised_embeddings_tfidf(Xtr, Y)
-        XFtr = Xtr.dot(F)
-        XFte = Xte.dot(F)
+        pretrained, supervised = False, False
+        if args.mode=='sup':
+            supervised=True
+        elif args.mode=='glove':
+            pretrained=True
+        elif args.mode=='glove-sup':
+            pretrained, supervised = True, True
+        _, F = embedding_matrix(dataset, pretrained=pretrained, supervised=supervised)
+        Xtr = Xtr.dot(F)
+        Xte = Xte.dot(F)
         sup_tend = time()-tinit
-        Mf1, mf1, acc, tend = cls_performance(XFtr, ytr, XFte, yte, dataset.classification_type, args.optimc, learner)
-        tend += sup_tend
-        logfile.add_row(measure='te-macro-F1', value=Mf1, timelapse=tend)
-        logfile.add_row(measure='te-micro-F1', value=mf1, timelapse=tend)
-        logfile.add_row(measure='te-accuracy', value=acc, timelapse=tend)
+    Mf1, mf1, acc, tend = cls_performance(Xtr, ytr, Xte, yte, dataset.classification_type, args.optimc, learner)
+    tend += sup_tend
+    logfile.add_row(measure='te-macro-F1', value=Mf1, timelapse=tend)
+    logfile.add_row(measure='te-micro-F1', value=mf1, timelapse=tend)
+    logfile.add_row(measure='te-accuracy', value=acc, timelapse=tend)
 
     print('Done!')
 
@@ -96,6 +97,6 @@ if __name__ == '__main__':
                              'each category (default 25000)')
     args = parser.parse_args()
 
-    assert args.mode in ['tfidf', 'supervised'], 'unknown mode'
+    assert args.mode in ['tfidf', 'sup', 'glove', 'glove-sup'], 'unknown mode'
     assert args.learner in ['svm', 'lr'], 'unknown learner'
     main()

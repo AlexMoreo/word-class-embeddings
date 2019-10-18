@@ -1,2 +1,2 @@
-# Word-label embeddings
+# Word-class embeddings
 (placeholder, comming soon)

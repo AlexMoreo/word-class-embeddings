@@ -111,8 +111,6 @@ def main():
     if args.pretrained or args.supervised:
         matrix_path, dims = get_embedding_matrix_path(args.dataset, dataset, args.pretrained, args.supervised, args.learnable, args.vec_matrix_path)
 
-
-
     analyzer = dataset.analyzer()
     devel = [' '.join(analyzer(t)) for t in tqdm(dataset.devel_raw, desc='indexing-devel')]
     test = [' '.join(analyzer(t)) for t in tqdm(dataset.test_raw, desc='indexing-test')]

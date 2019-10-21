@@ -204,13 +204,13 @@ def main():
     logfile.add_row(epoch=stopepoch, measure=f'early-stop', value=early_stop.best_score, timelapse=stoptime)
 
     if opt.plotmode==False:
+        print('performing final evaluation')
+        model = early_stop.restore_checkpoint()
+
         if opt.val_epochs>0:
             print(f'last {opt.val_epochs} epochs on the validation set')
             for val_epoch in range(1, opt.val_epochs + 1):
                 train(model, val_index, yval, pad_index, tinit, logfile, criterion, optim, epoch+val_epoch, method_name)
-
-        print('performing final evaluation')
-        model = early_stop.restore_checkpoint()
 
         # test
         print('Training complete: testing')

@@ -72,7 +72,7 @@ def set_method_name():
 
 
 def index_dataset(dataset, pretrained=None):
-    # build vocabulary
+    # build the vocabulary
     word2index = dict(dataset.vocabulary)
     known_words = set(word2index.keys())
     if pretrained is not None:

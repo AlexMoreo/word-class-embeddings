@@ -6,7 +6,6 @@ from model.helpers import *
 
 
 class LSTMClassifier(nn.Module):
-    # when weights is specified (a tensor of pretrained vectors) it remains fixed and never fine-tuned
     def __init__(self, output_size, hidden_size, vocab_size, learnable_length, pretrained=None, drop_embedding_range=None, drop_embedding_prop=0):
         super(LSTMClassifier, self).__init__()
         self.output_size = output_size

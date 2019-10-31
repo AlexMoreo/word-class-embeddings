@@ -5,7 +5,7 @@ from sklearn.decomposition import PCA
 
 
 def zscores(x, axis=0): #scipy.stats.zscores does not avoid division by 0, which can indeed occur
-    std = np.clip(np.std(x, axis=axis), 1e-5, None)
+    std = np.clip(np.std(x, ddof=1, axis=axis), 1e-5, None)
     mean = np.mean(x, axis=axis)
     return (x - mean) / std
 

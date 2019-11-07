@@ -59,10 +59,10 @@ class PretrainedEmbeddings(ABC):
 
 class GloVe(PretrainedEmbeddings):
 
-    def __init__(self, setname='840B'):
+    def __init__(self, setname='840B', path='./vectors_cache', max_vectors=None):
         super().__init__()
         print(f'Loading GloVe pretrained vectors from torchtext')
-        self.embed = torchtext.vocab.GloVe(setname)
+        self.embed = torchtext.vocab.GloVe(setname, cache=path, max_vectors=max_vectors)
         print('Done')
 
     def vocabulary(self):

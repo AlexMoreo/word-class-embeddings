@@ -1,5 +1,5 @@
 import warnings
-from embedding.supervised import supervised_embeddings, supervised_embeddings_tfidf
+from embedding.supervised import supervised_embeddings_tfidf
 from util.multilabelsvm import MLSVC
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import argparse

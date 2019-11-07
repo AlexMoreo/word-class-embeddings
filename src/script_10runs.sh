@@ -115,27 +115,26 @@ python main.py $log  --dataset $dataset	--net attn	--sup-drop 0.2	--hidden 512  
 python main.py $log  --dataset $dataset	--net attn	--sup-drop 0.2  --hidden 512	--pretrained glove	--supervised	--tunable --seed $run --max-epoch-length 300 --fullpickle ../pickles/$dataset-index.pickle
 #
 dataset=reuters21578
-python main.py $log  --dataset $dataset	--net cnn	--learnable 200	--channels 256
-python main.py $log  --dataset $dataset	--net cnn	--channels 256	--pretrained glove
-python main.py $log  --dataset $dataset	--net attn	--hidden 1024	--pretrained glove	--tunable --seed $run
-python main.py $log  --dataset $dataset	--net cnn	--channels 256	--pretrained glove	--tunable
-python main.py $log  --dataset $dataset	--net cnn	--learnable 115	--channels 256	--pretrained glove	--tunable
-python main.py $log  --dataset $dataset	--net cnn	--channels 512	--pretrained glove	--supervised
-python main.py $log  --dataset $dataset	--net cnn	--channels 512	--pretrained glove	--supervised	--tunable
+python main.py $log  --dataset $dataset	--net cnn	--learnable 200	--channels 256	 --seed $run
+python main.py $log  --dataset $dataset	--net cnn	--channels 256	--pretrained glove	 --seed $run
+python main.py $log  --dataset $dataset	--net cnn	--channels 256	--pretrained glove	--tunable	 --seed $run
+python main.py $log  --dataset $dataset	--net cnn	--learnable 115	--channels 256	--pretrained glove	--tunable	 --seed $run
+python main.py $log  --dataset $dataset	--net cnn	--channels 512	--pretrained glove	--supervised	 --seed $run
+python main.py $log  --dataset $dataset	--net cnn	--channels 512	--pretrained glove	--supervised	--tunable	 --seed $run
 
-python main.py $log  --dataset $dataset	--net lstm	--learnable 200
-python main.py $log  --dataset $dataset	--net lstm	--hidden 256	--pretrained glove
-python main.py $log  --dataset $dataset	--net lstm	--hidden 256	--pretrained glove	--tunable
-python main.py $log  --dataset $dataset	--net lstm	--learnable 115	--hidden 256	--pretrained glove	--tunable
-python main.py $log  --dataset $dataset	--net lstm	--hidden 256	--pretrained glove	--supervised
-python main.py $log  --dataset $dataset	--net lstm	--hidden 256	--pretrained glove	--supervised	--tunable
+python main.py $log  --dataset $dataset	--net lstm	--learnable 200	 --seed $run
+python main.py $log  --dataset $dataset	--net lstm	--hidden 256	--pretrained glove	 --seed $run
+python main.py $log  --dataset $dataset	--net lstm	--hidden 256	--pretrained glove	--tunable	 --seed $run
+python main.py $log  --dataset $dataset	--net lstm	--learnable 115	--hidden 256	--pretrained glove	--tunable	 --seed $run
+python main.py $log  --dataset $dataset	--net lstm	--hidden 256	--pretrained glove	--supervised	 --seed $run
+python main.py $log  --dataset $dataset	--net lstm	--hidden 256	--pretrained glove	--supervised	--tunable	 --seed $run
 
-python main.py $log  --dataset $dataset	--net attn	--learnable 200	--hidden 256
-python main.py $log  --dataset $dataset	--net attn	--hidden 1024	--pretrained glove
-python main.py $log  --dataset $dataset	--net attn	--hidden 1024	--pretrained glove	--tunable
-python main.py $log  --dataset $dataset	--net attn	--learnable 115	--hidden 1024	--pretrained glove	--tunable
-python main.py $log  --dataset $dataset	--net attn	--sup-drop 0.2	--hidden 256	--pretrained glove	--supervised
-python main.py $log  --dataset $dataset	--net attn	--hidden 256	--pretrained glove	--supervised	--tunable
+python main.py $log  --dataset $dataset	--net attn	--learnable 200	--hidden 256	 --seed $run
+python main.py $log  --dataset $dataset	--net attn	--hidden 1024	--pretrained glove	 --seed $run
+python main.py $log  --dataset $dataset	--net attn	--hidden 1024	--pretrained glove	--tunable	 --seed $run
+python main.py $log  --dataset $dataset	--net attn	--learnable 115	--hidden 1024	--pretrained glove	--tunable	 --seed $run
+python main.py $log  --dataset $dataset	--net attn	--sup-drop 0.2	--hidden 256	--pretrained glove	--supervised	 --seed $run
+python main.py $log  --dataset $dataset	--net attn	--hidden 256	--pretrained glove	--supervised	--tunable	 --seed $run
 
 
 common="--dataset-dir ../fasttext/dataset --log-file ../log/fasttext.10runs.csv"

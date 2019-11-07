@@ -101,6 +101,86 @@ optional arguments:
                         (default False, i.e., static)
 ```
 
+For example the following command:
+
+```
+python main.py --dataset 20newsgroups --net cnn --channels 256 --pretrained glove --supervised --log-file ../log/results.csv
+```
+
+Will run an experiment for the dataset _20 Newsgroups_ using CNN trained on static embeddings initialized as the concatenation
+of pre-trained _GloVe_ vectors and supervised _WCEs_. The output printed on stdout looks like:
+
+```
+Loading GloVe pretrained vectors from torchtext
+Done
+loading pickled dataset from ../pickles/20newsgroups.pickle
+[Done]
+singlelabel, nD=18846=(11314+7532), nF=17184, nC=20
+[unk = 67822/2198726=3.08%][out = 79947/2198726=3.64%]: 100%|██████████| 11314/11314 [00:02<00:00, 4594.88it/s]
+[unk = 32785/1303459=2.52%][out = 59887/1303459=4.59%]: 100%|██████████| 7532/7532 [00:01<00:00, 6041.34it/s]
+[indexing complete]
+[embedding matrix]
+	[pretrained-matrix]
+	[supervised-matrix]
+computing supervised embeddings...
+[embedding matrix done]
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 0, Training Loss: 2.992394
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 10, Training Loss: 2.577988
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 20, Training Loss: 1.817676
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 30, Training Loss: 1.395195
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 40, Training Loss: 1.212901
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 50, Training Loss: 1.094817
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 60, Training Loss: 1.043492
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 70, Training Loss: 0.879524
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 80, Training Loss: 0.920604
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 1, Step: 90, Training Loss: 0.858984
+evaluation: : 10it [00:00, 19.44it/s]
+[va] Macro-F1=0.793 Micro-F1=0.797 Accuracy=0.797
+[early-stop] improved, saving model in ../checkpoint/cnn-20newsgroups
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 2, Step: 0, Training Loss: 0.838249
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 2, Step: 10, Training Loss: 0.772314
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 2, Step: 20, Training Loss: 0.765503
+
+[...]
+
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 22, Step: 80, Training Loss: 0.176321
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 22, Step: 90, Training Loss: 0.169704
+evaluation: : 10it [00:00, 20.27it/s]
+[va] Macro-F1=0.837 Micro-F1=0.838 Accuracy=0.838
+[early-stop] patience exhausted
+[early-stop]
+performing final evaluation
+last 1 epochs on the validation set
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 23, Step: 0, Training Loss: 0.939111
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 23, Step: 10, Training Loss: 0.925299
+20newsgroups cnn-glove-supervised-d0.5-dotn-ch256 Epoch: 23, Step: 20, Training Loss: 0.901256
+evaluation: : 0it [00:00, ?it/s]Training complete: testing
+evaluation: : 31it [00:01, 18.94it/s]
+[final-te] Macro-F1=0.701 Micro-F1=0.712 Accuracy=0.712
+```
+
+This information is dumped into a csv file _../log/results.csv_ at the end of each epoch.
+The csv should look like:
+
+| dataset | epoch | measure | method | run | timelapse | value |
+| ------| ------| ------| ------| ------| ------| ------|
+20newsgroups | 1 | tr_loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 3.414764642715454 | 0.8589843213558197 |
+20newsgroups | 1 | va-macro-F1 | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 3.9400274753570557 | 0.7925198931977147 |
+20newsgroups | 1 | va-micro-F1 | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 3.9400274753570557 | 0.7966401414677275 |
+20newsgroups | 1 | va-accuracy | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 3.9400274753570557 | 0.7966401414677277 |
+20newsgroups | 1 | va-loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 3.9400274753570557 | 0.5694978833198547 |
+20newsgroups | 2 | tr_loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 7.470069885253906 | 0.6080582588911057 |
+20newsgroups | 2 | va-macro-F1 | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 8.01769471168518 | 0.8235132472427036 |
+20newsgroups | 2 | va-micro-F1 | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 8.01769471168518 | 0.8249336870026526 |
+20newsgroups | 2 | va-accuracy | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 8.01769471168518 | 0.8249336870026526 |
+20newsgroups | 2 | va-loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 8.01769471168518 | 0.42492079734802246 |
+... | ... | ... | ... | ... | ... | ... | ... |
+20newsgroups | 12 | early-stop | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 45.899415254592896 | 0.8421921175935061 |
+20newsgroups | 23 | tr_loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 82.66418981552124 | 0.901255750656128 |
+20newsgroups | 22 | final-te-macro-F1 | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 84.31677627563477 | 0.7014112131823149 |
+20newsgroups | 22 | final-te-micro-F1 | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 84.31677627563477 | 0.7124269782262347 |
+20newsgroups | 22 | final-te-accuracy | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 84.31677627563477 | 0.7124269782262347 |
+20newsgroups | 22 | final-te-loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 84.31677627563477 | 1.9046727418899536 |
 
 
 The script "script_10runs.sh" runs all experiments, invoking each neural architecture

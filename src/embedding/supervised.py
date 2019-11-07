@@ -64,8 +64,6 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
               f'Applying PCA(n_components={max_label_space})')
         pca = PCA(n_components=max_label_space)
         F = pca.fit(F).transform(F)
-        F /= pca.singular_values_
-
 
     return F
 

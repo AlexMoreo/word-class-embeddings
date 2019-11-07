@@ -176,12 +176,13 @@ The csv should look like:
 20newsgroups | 2 | va-loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 8.01769471168518 | 0.42492079734802246 |
 ... | ... | ... | ... | ... | ... | ... | ... |
 20newsgroups | 12 | early-stop | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 45.899415254592896 | 0.8421921175935061 |
-20newsgroups | 23 | tr_loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 82.66418981552124 | 0.901255750656128 |
+20newsgroups | 22 | tr_loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 82.66418981552124 | 0.901255750656128 |
 20newsgroups | 22 | final-te-macro-F1 | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 84.31677627563477 | 0.7014112131823149 |
 20newsgroups | 22 | final-te-micro-F1 | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 84.31677627563477 | 0.7124269782262347 |
 20newsgroups | 22 | final-te-accuracy | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 84.31677627563477 | 0.7124269782262347 |
 20newsgroups | 22 | final-te-loss | cnn-glove-supervised-d0.5-dotn-ch256 | 1 | 84.31677627563477 | 1.9046727418899536 |
 
+Displaying the training and validation losses, along with some evaluation metrics (macro-F1, micro-F1 and accuracy) in the validation set, for each epoch. This goes on until training eventually ends (in this case, because early-stop has encountered 10 training epochs without any improvement in the validation set). The last lines of the csv account for the the final evaluation in test (after restoring the best model parameters found in epoch 12).
 
 The script "script_10runs.sh" runs all experiments, invoking each neural architecture
 with the hyperparameters found optimal during grid-search optimization. Each 

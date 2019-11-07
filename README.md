@@ -6,7 +6,7 @@ Word-Class Embeddings (WCEs) are a form of supervised embeddings specially suite
 WCEs are meant to be used as extensions (i.e., by concatenation) to pre-trained embeddings (e.g., GloVe or word2vec) embeddings
 in order to improve the performance of neural classifiers.
 
-##Requirements
+## Requirements
 
 * Pytorch (1.1.0) and torchtext (0.3.0)
 * Cuda 10

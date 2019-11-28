@@ -1,6 +1,6 @@
 # Word-Class Embeddings for Multiclass Text Classification
 
-Code to reproduce the experiments reported in the paper "Word-Class Embeddings for Multiclass Text Classification" (to appear). This repo also includes a script to extract the word-class embedding matrix from any dataset so that you can use it in your model.
+Code to reproduce the experiments reported in the paper "Word-Class Embeddings for Multiclass Text Classification" (under review -- a preprint is available [here](https://arxiv.org/abs/1911.11506)). This repo also includes a script to extract the word-class embedding matrix from any dataset so that you can use it in your model.
 
 Word-Class Embeddings (WCEs) are a form of supervised embeddings specially suited for multiclass text classification.
 WCEs are meant to be used as extensions (i.e., by concatenation) to pre-trained embeddings (e.g., GloVe or word2vec) embeddings

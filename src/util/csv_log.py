@@ -22,21 +22,22 @@ class CSVLog:
             dir = os.path.dirname(self.file)
             if dir and not os.path.exists(dir): os.makedirs(dir)
             self.df = pd.DataFrame(columns=self.columns)
-        self.defaults={}
+        self.defaults = {}
 
     def already_calculated(self, **kwargs):
         df = self.df
-        if df.shape[0]==0:
+        if df.shape[0] == 0:
             return False
-        if len(kwargs)==0:
+        if len(kwargs) == 0:
             kwargs = self.defaults
         for key,val in kwargs.items():
-            df = df.loc[df[key]==val]
-            if df.shape[0]==0: return False
+            df = df.loc[df[key] == val]
+            if df.shape[0] == 0:
+                return False
         return True
 
     def set_default(self, param, value):
-        self.defaults[param]=value
+        self.defaults[param] = value
 
     def add_row(self, **kwargs):
         for key in self.defaults.keys():
@@ -47,7 +48,6 @@ class CSVLog:
         s = pd.Series(values, index=self.columns)
         self.df = self.df.append(s, ignore_index=True)
         if self.autoflush: self.flush()
-        # self.tell(s.to_string())
         self.tell(kwargs)
 
     def flush(self):

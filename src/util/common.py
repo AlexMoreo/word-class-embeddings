@@ -71,7 +71,7 @@ def get_word_list(word2index1, word2index2=None): #TODO: redo
     return word_list
 
 
-def batchify(index_list, labels, batchsize, pad_index, target_long=False, max_pad_length=500):
+def batchify(index_list, labels, batchsize, pad_index, device, target_long=False, max_pad_length=500):
     nsamples = len(index_list)
     nbatches = nsamples // batchsize + 1*(nsamples%batchsize>0)
     for b in range(nbatches):
@@ -83,17 +83,17 @@ def batchify(index_list, labels, batchsize, pad_index, target_long=False, max_pa
         batch = torch.LongTensor(batch)
         totype = torch.LongTensor if target_long else torch.FloatTensor
         target = totype(batch_labels)
-        yield batch.cuda(), target.cuda()
+        yield batch.to(device), target.to(device)
 
 
-def batchify_unlabelled(index_list, batchsize, pad_index, max_pad_length=500):
+def batchify_unlabelled(index_list, batchsize, pad_index, device, max_pad_length=500):
     nsamples = len(index_list)
     nbatches = nsamples // batchsize + 1*(nsamples%batchsize>0)
     for b in range(nbatches):
         batch = index_list[b*batchsize:(b+1)*batchsize]
         batch = pad(batch, pad_index=pad_index, max_pad_length=max_pad_length)
         batch = torch.LongTensor(batch)
-        yield batch.cuda()
+        yield batch.to(device)
 
 
 def clip_gradient(model, clip_value=1e-1):

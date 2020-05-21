@@ -4,6 +4,7 @@ import gensim
 import os
 import numpy as np
 
+AVAILABLE_PRETRAINED = ['glove', 'word2vec', 'fasttext']
 
 class KeyedVectors:
 
@@ -21,7 +22,8 @@ class KeyedVectors:
 
         source_idx, target_idx = [], []
         for i,word in enumerate(words):
-            if word not in self.word2index: continue
+            if word not in self.word2index:
+                continue
             j = self.word2index[word]
             source_idx.append(i)
             target_idx.append(j)
@@ -80,13 +82,14 @@ class GloVe(PretrainedEmbeddings):
 
 class Word2Vec(PretrainedEmbeddings):
 
-    def __init__(self, path, limit=None):
+    def __init__(self, path, limit=None, binary=True):
         super().__init__()
-        print(f'Loading word2vec pretrained vectors from {path}')
+        print(f'Loading word2vec format pretrained vectors from {path}')
         assert os.path.exists(path), print(f'pre-trained keyed vectors not found in {path}')
-        self.embed = gensim.models.KeyedVectors.load_word2vec_format(path, binary=True, limit=limit)
-        self.word2index={w:i for i,w in enumerate(self.embed.index2word)}
+        self.embed = gensim.models.KeyedVectors.load_word2vec_format(path, binary=binary, limit=limit)
+        self.word2index = {w: i for i,w in enumerate(self.embed.index2word)}
         print('Done')
+
 
     def vocabulary(self):
         return set(self.word2index.keys())
@@ -100,4 +103,10 @@ class Word2Vec(PretrainedEmbeddings):
         extraction[source_idx] = self.embed.vectors[target_idx]
         extraction = torch.from_numpy(extraction).float()
         return extraction
+
+
+class FastTextEmbeddings(Word2Vec):
+
+    def __init__(self, path, limit=None):
+        super().__init__(path, limit, binary=False)
 

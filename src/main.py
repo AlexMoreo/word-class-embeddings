@@ -19,7 +19,7 @@ from embedding.pretrained import *
 allowed_nets = {'cnn', 'lstm', 'attn'}
 
 
-def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, xavier_uniform=True, tocuda=True):
+def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device, xavier_uniform=True):
     net=opt.net
     assert net in allowed_nets, f'{net} not supported, valid ones are={allowed_nets}'
 
@@ -42,8 +42,7 @@ def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, xavier_uniform=Tru
             if p.dim() > 1 and p.requires_grad:
                 nn.init.xavier_uniform_(p)
 
-    if tocuda:
-        model=model.cuda()
+    model=model.to(device)
 
     if opt.tunable:
         model.finetune_pretrained()
@@ -145,6 +144,8 @@ def load_pretrained(opt):
         return GloVe(path=opt.glove_path)
     elif opt.pretrained == 'word2vec':
         return Word2Vec(path=opt.word2vec_path, limit=1000000)
+    elif opt.pretrained == 'fasttext':
+        return FastTextEmbeddings(path=opt.fasttext_path, limit=1000000)
     return None
 
 
@@ -157,10 +158,10 @@ def init_loss(classification_type):
     return None
 
 
-def main():
+def main(opt):
     method_name = set_method_name()
     logfile = init_logfile(method_name, opt)
-    pretrained=load_pretrained(opt)
+    pretrained = load_pretrained(opt)
 
     dataset = Dataset.load(dataset_name=opt.dataset, pickle_path=opt.pickle_path).show()
     word2index, out_of_vocabulary, unk_index, pad_index, devel_index, test_index = index_dataset(dataset, pretrained)
@@ -173,7 +174,7 @@ def main():
     vocabsize = len(word2index) + len(out_of_vocabulary)
     pretrained_embeddings, sup_range = embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabulary, opt)
 
-    model = init_Net(dataset.nC, vocabsize, pretrained_embeddings, sup_range, tocuda=True)
+    model = init_Net(dataset.nC, vocabsize, pretrained_embeddings, sup_range, opt.device)
     optim = init_optimizer(model, lr=opt.lr)
     criterion = init_loss(dataset.classification_type)
 
@@ -235,7 +236,7 @@ def train(model, train_index, ytr, pad_index, tinit, logfile, criterion, optim, 
             ytr = ytr[from_:to_]
 
     model.train()
-    for idx, (batch, target) in enumerate(batchify(train_index, ytr, opt.batch_size, pad_index, as_long)):
+    for idx, (batch, target) in enumerate(batchify(train_index, ytr, opt.batch_size, pad_index, opt.device, as_long)):
         optim.zero_grad()
         loss = criterion(model(batch), target)
         loss.backward()
@@ -256,7 +257,9 @@ def test(model, test_index, yte, pad_index, classification_type, tinit, epoch, l
     model.eval()
     predictions = []
     target_long = isinstance(criterion, torch.nn.CrossEntropyLoss)
-    for batch, target in tqdm(batchify(test_index, yte, batchsize=opt.batch_size_test, pad_index=pad_index, target_long=target_long), desc='evaluation: '):
+    for batch, target in tqdm(batchify(
+            test_index, yte, opt.batch_size_test, pad_index, opt.device, target_long=target_long
+    ), desc='evaluation: '):
         logits = model(batch)
         loss = criterion(logits, target).item()
         prediction = csr_matrix(predict(logits, classification_type=classification_type))
@@ -280,59 +283,88 @@ if __name__ == '__main__':
 
     # Training settings
     parser = argparse.ArgumentParser(description='Neural text classification with Word-Class Embeddings')
-    parser.add_argument('--dataset', type=str, default='reuters21578', metavar='str', help=f'dataset, one in {available_datasets}')
-    parser.add_argument('--batch-size', type=int, default=100, metavar='int', help='input batch size (default: 100)')
-    parser.add_argument('--batch-size-test', type=int, default=250, metavar='int', help='batch size for testing (default: 250)')
-    parser.add_argument('--nepochs', type=int, default=200, metavar='int', help='number of epochs (default: 200)')
-    parser.add_argument('--patience', type=int, default=10, metavar='int', help='patience for early-stop (default: 10)')
-    parser.add_argument('--plotmode', action='store_true', default=False, help='in plot mode executes a long run in order '
-                                   'to generate enough data to produce trend plots (test-each should be >0. This mode is '
-                                   'used to produce plots, and does not perform an evaluation on the test set.')
-    parser.add_argument('--hidden', type=int, default=512, metavar='int', help='hidden lstm size (default: 512)')
-    parser.add_argument('--channels', type=int, default=128, metavar='int', help='number of cnn out-channels (default: 128)')
-    parser.add_argument('--lr', type=float, default=1e-3, metavar='float', help='learning rate (default: 1e-3)')
-    parser.add_argument('--weight_decay', type=float, default=0, metavar='float', help='weight decay (default: 0)')
-    parser.add_argument('--sup-drop', type=float, default=0.5, metavar='[0.0, 1.0]', help='dropout probability for the supervised matrix (default: 0.5)')
-    parser.add_argument('--seed', type=int, default=1, metavar='int', help='random seed (default: 1)')
-    parser.add_argument('--log-interval', type=int, default=10, metavar='int', help='how many batches to wait before printing training status')
-    parser.add_argument('--log-file', type=str, default='../log/log.csv', metavar='str', help='path to the log csv file')
-    parser.add_argument('--pickle-dir', type=str, default='../pickles', metavar='str', help=f'if set, specifies the path where to '
-                        f'save/load the dataset pickled (set to None if you prefer not to retain the pickle file)')
-    parser.add_argument('--test-each', type=int, default=0, metavar='int', help='how many epochs to wait before invoking test (default: 0, only at the end)')
-    parser.add_argument('--checkpoint-dir', type=str, default='../checkpoint', metavar='str', help='path to the directory containing checkpoints')
-    parser.add_argument('--net', type=str, default='lstm', metavar='str', help=f'net, one in {allowed_nets}')
-    parser.add_argument('--pretrained', type=str, default=None, metavar='glove|word2vec', help='pretrained embeddings, use "glove" or "word2vec" (default None)')
-    parser.add_argument('--supervised', action='store_true', default=False, help='use supervised embeddings')
-    parser.add_argument('--supervised-method', type=str, default='dotn', metavar='dotn|ppmi|ig|chi', help='method used to create the supervised matrix. '
-                                   'Available methods include dotn (default), ppmi (positive pointwise mutual information), ig (information gain) '
-                                   'and chi (Chi-squared)')
-    parser.add_argument('--learnable', type=int, default=0, metavar='int', help='dimension of the learnable embeddings (default 0)')
-    parser.add_argument('--val-epochs', type=int, default=1, metavar='int', help='number of training epochs to perform on the '
-                        'validation set once training is over (default 1)')
+    parser.add_argument('--dataset', type=str, default='reuters21578', metavar='str',
+                        help=f'dataset, one in {available_datasets}')
+    parser.add_argument('--batch-size', type=int, default=100, metavar='int',
+                        help='input batch size (default: 100)')
+    parser.add_argument('--batch-size-test', type=int, default=250, metavar='int',
+                        help='batch size for testing (default: 250)')
+    parser.add_argument('--nepochs', type=int, default=200, metavar='int',
+                        help='number of epochs (default: 200)')
+    parser.add_argument('--patience', type=int, default=10, metavar='int',
+                        help='patience for early-stop (default: 10)')
+    parser.add_argument('--plotmode', action='store_true', default=False,
+                        help='in plot mode, executes a long run in order to generate enough data to produce trend plots'
+                             ' (test-each should be >0. This mode is used to produce plots, and does not perform a '
+                             'final evaluation on the test set other than those performed after test-each epochs).')
+    parser.add_argument('--hidden', type=int, default=512, metavar='int',
+                        help='hidden lstm size (default: 512)')
+    parser.add_argument('--channels', type=int, default=256, metavar='int',
+                        help='number of cnn out-channels (default: 256)')
+    parser.add_argument('--lr', type=float, default=1e-3, metavar='float',
+                        help='learning rate (default: 1e-3)')
+    parser.add_argument('--weight_decay', type=float, default=0, metavar='float',
+                        help='weight decay (default: 0)')
+    parser.add_argument('--sup-drop', type=float, default=0.5, metavar='[0.0, 1.0]',
+                        help='dropout probability for the supervised matrix (default: 0.5)')
+    parser.add_argument('--seed', type=int, default=1, metavar='int',
+                        help='random seed (default: 1)')
+    parser.add_argument('--log-interval', type=int, default=10, metavar='int',
+                        help='how many batches to wait before printing training status')
+    parser.add_argument('--log-file', type=str, default='../log/log.csv', metavar='str',
+                        help='path to the log csv file')
+    parser.add_argument('--pickle-dir', type=str, default='../pickles', metavar='str',
+                        help=f'if set, specifies the path where to save/load the dataset pickled (set to None if you '
+                             f'prefer not to retain the pickle file)')
+    parser.add_argument('--test-each', type=int, default=0, metavar='int',
+                        help='how many epochs to wait before invoking test (default: 0, only at the end)')
+    parser.add_argument('--checkpoint-dir', type=str, default='../checkpoint', metavar='str',
+                        help='path to the directory containing checkpoints')
+    parser.add_argument('--net', type=str, default='lstm', metavar='str',
+                        help=f'net, one in {allowed_nets}')
+    parser.add_argument('--pretrained', type=str, default=None, metavar='glove|word2vec',
+                        help='pretrained embeddings, use "glove" or "word2vec" (default None)')
+    parser.add_argument('--supervised', action='store_true', default=False,
+                        help='use supervised embeddings')
+    parser.add_argument('--supervised-method', type=str, default='dotn', metavar='dotn|ppmi|ig|chi',
+                        help='method used to create the supervised matrix. Available methods include dotn (default), '
+                             'ppmi (positive pointwise mutual information), ig (information gain) and chi (Chi-squared)')
+    parser.add_argument('--learnable', type=int, default=0, metavar='int',
+                        help='dimension of the learnable embeddings (default 0)')
+    parser.add_argument('--val-epochs', type=int, default=1, metavar='int',
+                        help='number of training epochs to perform on the validation set once training is '
+                             'over (default 1)')
     parser.add_argument('--word2vec-path', type=str, default='../datasets/Word2Vec/GoogleNews-vectors-negative300.bin',
-                        metavar='str', help=f'path to GoogleNews-vectors-negative300.bin pretrained vectors (used only with --pretrained word2vec)')
-    parser.add_argument('--glove-path', type=str, default='.vector_cache',
                         metavar='str',
+                        help=f'path to GoogleNews-vectors-negative300.bin pretrained vectors (used only '
+                             f'with --pretrained word2vec)')
+    parser.add_argument('--glove-path', type=str, default='.vector_cache',
+                        metavar='PATH',
+                        help=f'path to glove.840B.300d pretrained vectors (used only with --pretrained glove)')
+    parser.add_argument('--fasttext-path', type=str, default='../datasets/fastText/crawl-300d-2M.vec',
                         help=f'path to glove.840B.300d pretrained vectors (used only with --pretrained word2vec)')
-    parser.add_argument('--max-label-space', type=int, default=300, metavar='int', help='larger dimension allowed for the '
-                        'feature-label embedding (if larger, then PCA with this number of components is applied '
-                        '(default 300)')
+    parser.add_argument('--max-label-space', type=int, default=300, metavar='int',
+                        help='larger dimension allowed for the feature-label embedding (if larger, then PCA with this '
+                             'number of components is applied (default 300)')
     parser.add_argument('--max-epoch-length', type=int, default=None, metavar='int',
                         help='number of (batched) training steps before considering an epoch over (None: full epoch)') #300 for wipo-sl-sc
-    parser.add_argument('--force', action='store_true', default=False, help='do not check if this experiment has already been run')
+    parser.add_argument('--force', action='store_true', default=False,
+                        help='do not check if this experiment has already been run')
     parser.add_argument('--tunable', action='store_true', default=False,
-                        help='pretrained embeddings are tunable from the begining (default False, i.e., static)')
+                        help='pretrained embeddings are tunable from the beginning (default False, i.e., static)')
+    parser.add_argument('--device', default='cuda',
+                        help='device on which tu run the model (default cuda)')
 
     opt = parser.parse_args()
 
-    assert torch.cuda.is_available(), 'CUDA not available'
-    device = torch.device('cuda')
+    opt.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    print(f'running on {opt.device}')
     torch.manual_seed(opt.seed)
 
     assert opt.dataset in available_datasets, f'unknown dataset {opt.dataset}'
-    assert opt.pretrained in {None, 'glove', 'word2vec'}, f'unknown pretrained set {opt.pretrained}'
+    assert opt.pretrained in [None]+AVAILABLE_PRETRAINED, f'unknown pretrained set {opt.pretrained}'
     assert not opt.plotmode or opt.test_each > 0, 'plot mode implies --test-each>0'
     assert opt.supervised_method in ['dotn', 'ppmi', 'ig', 'chi2']
     if opt.pickle_dir: opt.pickle_path = join(opt.pickle_dir, f'{opt.dataset}.pickle')
 
-    main()
+    main(opt)

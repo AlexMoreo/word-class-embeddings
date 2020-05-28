@@ -6,7 +6,6 @@ from embedding.supervised import get_supervised_embeddings
 from time import time
 import numpy as np
 
-
 def read_dataset():
     all_sentences, all_labels = [], []
     for line in tqdm(open(opt.input, 'rt').readlines(), f'loading {opt.input}'):
@@ -67,19 +66,22 @@ def write_embeddings(S, features, format='text'):
                 foo.write(f'{term} {str_vec}\n')
 
 
+def main():
+    sentences, labels = read_dataset()
+    S, features = compute_embeddings(sentences, labels)
+    write_embeddings(S, features)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Learn Word-Class Embeddings from dataset in fastText format')
-    parser.add_argument('-o', '--output', help='Output file name', default='word-class-embeddings.txt')
-    parser.add_argument('-m', '--method', help='Correlation method', default='dotn')
-    parser.add_argument('-f', '--minfreq', help='Minimum number of occurrences of terms', default=5)
-    parser.add_argument('-d', '--maxdim', help='Maximum number of dimensions (if there are more categories, then PCA is applied)', default=300)
+    parser.add_argument('-o', '--output', help='Output file name where to store the WCE matrix in .txt format', default='word-class-embeddings.txt')
+    parser.add_argument('-m', '--method', help='Correlation method [dotn]', default='dotn')
+    parser.add_argument('-f', '--minfreq', help='Minimum number of occurrences of terms [5]', default=5)
+    parser.add_argument('-d', '--maxdim', help='Maximum number of dimensions (by default, WCEs have one dimension per category) '
+                                               'after which PCA is applied [300]', default=300)
     parser.add_argument('-l', '--label', help='Label prefix (default __label__)', default='__label__')
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument('-i', '--input', help='Input file path', required=True, type=str)
     opt = parser.parse_args()
 
-    sentences, labels = read_dataset()
-    S, features = compute_embeddings(sentences, labels)
-    write_embeddings(S, features)
+    main()

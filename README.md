@@ -1,6 +1,6 @@
 # Word-Class Embeddings for Multiclass Text Classification
 
-Code to reproduce the experiments reported in the paper "Word-Class Embeddings for Multiclass Text Classification" (to appear).
+Code to reproduce the experiments reported in the paper "Word-Class Embeddings for Multiclass Text Classification" (to appear). This repo also includes a script to extract the word-class embedding matrix from any dataset so that you can use it in your model.
 
 Word-Class Embeddings (WCEs) are a form of supervised embeddings specially suited for multiclass text classification.
 WCEs are meant to be used as extensions (i.e., by concatenation) to pre-trained embeddings (e.g., GloVe or word2vec) embeddings
@@ -16,11 +16,41 @@ in order to improve the performance of neural classifiers.
 * Pandas (0.24.2) 
 * fastText (0.2.0)
 
+## Generating a Word-Class Embedding matrix
+The script _learn_wordlabel_embeddings.py_ generates the WCE matrix from any dataset. The dataset must be in _fastText_ format (i.e., one already-preprocessed document for each line with labels indicated by a prefix `__label__<labelname>`). The WCE matrix is stored in disk in txt format (`<word> <dim1> <dim2> ... <dimn>\n`); support for .bin files will be added soon.
+	
+```
+usage: learn_wordlabel_embeddings.py [-h] [-o OUTPUT] [-m METHOD] [-f MINFREQ]
+                                     [-d MAXDIM] [-l LABEL] -i INPUT
+
+Learn Word-Class Embeddings from dataset in fastText format
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        Output file name where to store the WCE matrix in .txt
+                        format
+  -m METHOD, --method METHOD
+                        Correlation method [dotn]
+  -f MINFREQ, --minfreq MINFREQ
+                        Minimum number of occurrences of terms [5]
+  -d MAXDIM, --maxdim MAXDIM
+                        Maximum number of dimensions (by default, WCEs have
+                        one dimension per category) after which PCA is applied
+                        [300]
+  -l LABEL, --label LABEL
+                        Label prefix (default __label__)
+
+required named arguments:
+  -i INPUT, --input INPUT
+                        Input file path
+```
+
+## Experiments
+
 Although all datasets used in the experiments are publicly available, not all can be download automatically.
 In such cases, you will be warned with an error message explaining where and how to ask for permission. 
 If otherwise, the dataset will be fetched and processed automatically.
-
-## Experiments
 
 Our experiments can be reproduced using:
 * main.py: implements basic versions of three neural architectures (CNNs, LSTMs, and ATTN)

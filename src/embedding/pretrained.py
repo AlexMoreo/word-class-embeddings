@@ -6,34 +6,6 @@ import numpy as np
 
 AVAILABLE_PRETRAINED = ['glove', 'word2vec', 'fasttext']
 
-class KeyedVectors:
-
-    def __init__(self, word2index, weights):
-        assert len(word2index)==weights.shape[0], 'wrong number of dimensions'
-        index2word = {i:w for w,i in word2index.items()}
-        assert len([i for i in range(len(index2word)) if i not in index2word])==0, 'gaps in indexing not allowed'
-        self.word2index = word2index
-        self.index2word = index2word
-        self.weights = weights
-
-    def extract(self, words):
-        dim = self.weights.shape[1]
-        v_size = len(words)
-
-        source_idx, target_idx = [], []
-        for i,word in enumerate(words):
-            if word not in self.word2index:
-                continue
-            j = self.word2index[word]
-            source_idx.append(i)
-            target_idx.append(j)
-
-        extraction = np.zeros((v_size, dim))
-        extraction[np.asarray(source_idx)] = self.weights[np.asarray(target_idx)]
-
-        return extraction
-
-
 
 class PretrainedEmbeddings(ABC):
 
@@ -89,7 +61,6 @@ class Word2Vec(PretrainedEmbeddings):
         self.embed = gensim.models.KeyedVectors.load_word2vec_format(path, binary=binary, limit=limit)
         self.word2index = {w: i for i,w in enumerate(self.embed.index2word)}
         print('Done')
-
 
     def vocabulary(self):
         return set(self.word2index.keys())

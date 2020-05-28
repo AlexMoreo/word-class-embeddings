@@ -1,12 +1,9 @@
 import argparse
-import torch.nn as nn
 from scipy.sparse import csr_matrix
 from sklearn.model_selection import train_test_split
 import scipy
 from embedding.supervised import get_supervised_embeddings
-from model.cnn_class import CNN
-from model.lstm_attn_class import AttentionModel
-from model.lstm_class import LSTMClassifier
+from model.classification import NeuralClassifier
 from util.early_stop import EarlyStopping
 from util.common import *
 from data.dataset import *
@@ -16,34 +13,22 @@ from util.metrics import *
 from time import time
 from embedding.pretrained import *
 
-allowed_nets = {'cnn', 'lstm', 'attn'}
 
+def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device):
+    net_type=opt.net
+    hidden = opt.channels if net_type == 'cnn' else opt.hidden
+    model = NeuralClassifier(
+        net_type,
+        output_size=nC,
+        hidden_size=hidden,
+        vocab_size=vocabsize,
+        learnable_length=opt.learnable,
+        pretrained = pretrained_embeddings,
+        drop_embedding_range=sup_range,
+        drop_embedding_prop=opt.sup_drop)
 
-def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device, xavier_uniform=True):
-    net=opt.net
-    assert net in allowed_nets, f'{net} not supported, valid ones are={allowed_nets}'
-
-    if net=='lstm':
-        model = LSTMClassifier(output_size=nC, hidden_size=opt.hidden, vocab_size=vocabsize,
-                               learnable_length=opt.learnable, pretrained=pretrained_embeddings,
-                               drop_embedding_range=sup_range, drop_embedding_prop=opt.sup_drop)
-    elif net=='attn':
-        model = AttentionModel(output_size=nC, hidden_size=opt.hidden, vocab_size=vocabsize,
-                               learnable_length=opt.learnable, pretrained=pretrained_embeddings,
-                               drop_embedding_range=sup_range, drop_embedding_prop=opt.sup_drop)
-    elif net == 'cnn':
-        model = CNN(output_size=nC, out_channels=opt.channels, vocab_size=vocabsize,
-                    learnable_length=opt.learnable,
-                    pretrained=pretrained_embeddings,
-                    drop_embedding_range=sup_range, drop_embedding_prop=opt.sup_drop)
-
-    if xavier_uniform:
-        for p in model.parameters():
-            if p.dim() > 1 and p.requires_grad:
-                nn.init.xavier_uniform_(p)
-
-    model=model.to(device)
-
+    model.xavier_uniform()
+    model = model.to(device)
     if opt.tunable:
         model.finetune_pretrained()
 
@@ -151,11 +136,8 @@ def load_pretrained(opt):
 
 def init_loss(classification_type):
     assert classification_type in ['multilabel','singlelabel'], 'unknown classification mode'
-    if classification_type == 'multilabel':
-        return torch.nn.BCEWithLogitsLoss().cuda()
-    elif classification_type == 'singlelabel':
-        return torch.nn.CrossEntropyLoss().cuda()
-    return None
+    L = torch.nn.BCEWithLogitsLoss() if classification_type == 'multilabel' else torch.nn.CrossEntropyLoss()
+    return L.cuda()
 
 
 def main(opt):
@@ -203,7 +185,7 @@ def main(opt):
     stopepoch = early_stop.best_epoch
     logfile.add_row(epoch=stopepoch, measure=f'early-stop', value=early_stop.best_score, timelapse=stoptime)
 
-    if opt.plotmode==False:
+    if not opt.plotmode:
         print('performing final evaluation')
         model = early_stop.restore_checkpoint()
 
@@ -223,7 +205,7 @@ def train(model, train_index, ytr, pad_index, tinit, logfile, criterion, optim, 
     if opt.max_epoch_length is not None: # consider an epoch over after max_epoch_length
         tr_len = len(train_index)
         train_for = opt.max_epoch_length*opt.batch_size
-        from_,to_= (epoch*train_for) % tr_len, ((epoch+1)*train_for) % tr_len
+        from_, to_= (epoch*train_for) % tr_len, ((epoch+1)*train_for) % tr_len
         print(f'epoch from {from_} to {to_}')
         if to_ < from_:
             train_index = train_index[from_:] + train_index[:to_]
@@ -232,7 +214,7 @@ def train(model, train_index, ytr, pad_index, tinit, logfile, criterion, optim, 
             else:
                 ytr = np.concatenate((ytr[from_:], ytr[:to_]))
         else:
-            train_index=train_index[from_:to_]
+            train_index = train_index[from_:to_]
             ytr = ytr[from_:to_]
 
     model.train()
@@ -257,9 +239,10 @@ def test(model, test_index, yte, pad_index, classification_type, tinit, epoch, l
     model.eval()
     predictions = []
     target_long = isinstance(criterion, torch.nn.CrossEntropyLoss)
-    for batch, target in tqdm(batchify(
-            test_index, yte, opt.batch_size_test, pad_index, opt.device, target_long=target_long
-    ), desc='evaluation: '):
+    for batch, target in tqdm(
+            batchify(test_index, yte, opt.batch_size_test, pad_index, opt.device, target_long=target_long),
+            desc='evaluation: '
+    ):
         logits = model(batch)
         loss = criterion(logits, target).item()
         prediction = csr_matrix(predict(logits, classification_type=classification_type))
@@ -321,7 +304,7 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint-dir', type=str, default='../checkpoint', metavar='str',
                         help='path to the directory containing checkpoints')
     parser.add_argument('--net', type=str, default='lstm', metavar='str',
-                        help=f'net, one in {allowed_nets}')
+                        help=f'net, one in {NeuralClassifier.ALLOWED_NETS}')
     parser.add_argument('--pretrained', type=str, default=None, metavar='glove|word2vec',
                         help='pretrained embeddings, use "glove" or "word2vec" (default None)')
     parser.add_argument('--supervised', action='store_true', default=False,
@@ -365,6 +348,7 @@ if __name__ == '__main__':
     assert opt.pretrained in [None]+AVAILABLE_PRETRAINED, f'unknown pretrained set {opt.pretrained}'
     assert not opt.plotmode or opt.test_each > 0, 'plot mode implies --test-each>0'
     assert opt.supervised_method in ['dotn', 'ppmi', 'ig', 'chi2']
-    if opt.pickle_dir: opt.pickle_path = join(opt.pickle_dir, f'{opt.dataset}.pickle')
+    if opt.pickle_dir:
+        opt.pickle_path = join(opt.pickle_dir, f'{opt.dataset}.pickle')
 
     main(opt)

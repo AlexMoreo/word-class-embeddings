@@ -85,9 +85,9 @@ def train_val_test(dataset):
     return (train_docs, ytr), (val_docs, yval), (dataset.test_raw, dataset.test_target)
 
 
-def target_type(y, criterion):
+def target_type(y, criterion, device):
     totype = torch.LongTensor if isinstance(criterion, torch.nn.CrossEntropyLoss) else torch.FloatTensor
-    return totype(y)
+    return totype(y).to(device)
 
 
 def main(opt):
@@ -191,7 +191,7 @@ def train(model, train_index, ytr, tinit, logfile, criterion, optim, epoch, meth
     model.train()
     for idx, (batch, target) in enumerate(train_batch.batch(train_index, ytr)):
         optim.zero_grad()
-        loss = criterion(model(batch), target_type(target, criterion))
+        loss = criterion(model(batch), target_type(target, criterion, opt.device))
         loss.backward()
         clip_gradient(model)
         optim.step()
@@ -212,7 +212,7 @@ def test(model, test_docs, yte, classification_type, tinit, epoch, logfile, crit
     batcher = Batcher(opt.batch_size_test)
     for batch, target in tqdm(batcher.batch(test_docs, yte), desc='evaluation: '):
         logits = model(batch)
-        loss = criterion(logits, target_type(target, criterion)).item()
+        loss = criterion(logits, target_type(target, criterion, opt.device)).item()
         prediction = csr_matrix(predict(logits, classification_type=classification_type))
         predictions.append(prediction)
 
@@ -292,8 +292,6 @@ if __name__ == '__main__':
                         help='do not check if this experiment has already been run')
     parser.add_argument('--tunable', action='store_true', default=False,
                         help='pretrained embeddings are tunable from the beginning (default False, i.e., static)')
-    parser.add_argument('--device', default='cuda',
-                        help='device on which tu run the model (default cuda)')
 
     opt = parser.parse_args()
 

@@ -337,8 +337,6 @@ if __name__ == '__main__':
                         help='do not check if this experiment has already been run')
     parser.add_argument('--tunable', action='store_true', default=False,
                         help='pretrained embeddings are tunable from the beginning (default False, i.e., static)')
-    parser.add_argument('--device', default='cuda',
-                        help='device on which tu run the model (default cuda)')
 
     opt = parser.parse_args()
 

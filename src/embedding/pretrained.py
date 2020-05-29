@@ -79,5 +79,17 @@ class Word2Vec(PretrainedEmbeddings):
 class FastTextEmbeddings(Word2Vec):
 
     def __init__(self, path, limit=None):
-        super().__init__(path, limit, binary=False)
+        pathbin = path+'.bin'
+        if os.path.exists(pathbin):
+            print('open binary file')
+            super().__init__(pathbin, limit, binary=True)
+        else:
+            print('open textual file')
+            super().__init__(path, limit, binary=False)
+            print('saving as binary file')
+            self.save_binary(pathbin)
+            print('done')
 
+
+    def save_binary(self, path):
+        self.embed.save_word2vec_format(path, binary=True)

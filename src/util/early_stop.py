@@ -20,7 +20,8 @@ class EarlyStopping:
 
     def __call__(self, watch_score, epoch):
 
-        if self.STOP: return #done
+        if self.STOP:
+            return #done
 
         if self.best_score is None or watch_score >= self.best_score:
             self.best_score = watch_score

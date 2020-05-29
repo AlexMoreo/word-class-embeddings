@@ -4,6 +4,9 @@ import numpy as np
 from tqdm import tqdm
 import torch
 from scipy.sparse import vstack, issparse
+from joblib import Parallel, delayed
+import multiprocessing
+import itertools
 
 
 def index(data, vocab, known_words, analyzer, unk_index, out_of_vocabulary):
@@ -117,7 +120,26 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
+def get_parallel_slices(n_tasks, n_jobs=-1):
+    if n_jobs==-1:
+        n_jobs = multiprocessing.cpu_count()
+    batch = int(n_tasks / n_jobs)
+    remainder = n_tasks % n_jobs
+    return [slice(job*batch, (job+1)*batch+ (remainder if job == n_jobs - 1 else 0)) for job in range(n_jobs)]
 
 
+def tokenize_job(documents, tokenizer, max_tokens, job):
+    return [' '.join(tokenizer(d)[:max_tokens]) for d in tqdm(documents, desc=f'tokenizing [job: {job}]')]
+
+
+def tokenize_parallel(documents, tokenizer, max_tokens, n_jobs=-1):
+    slices = get_parallel_slices(n_tasks=len(documents), n_jobs=n_jobs)
+    tokens = Parallel(n_jobs=n_jobs)(
+        delayed(tokenize_job)(
+            documents[slice_i], tokenizer, max_tokens, job
+        )
+        for job, slice_i in enumerate(slices)
+    )
+    return list(itertools.chain.from_iterable(tokens))
 
 

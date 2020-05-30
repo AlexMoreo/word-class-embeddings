@@ -214,7 +214,7 @@ def train(model, train_index, ytr, tinit, logfile, criterion, optim, epoch, meth
 def test(model, test_docs, yte, classification_type, tinit, epoch, logfile, criterion, measure_prefix):
     model.eval()
     predictions = []
-    batcher = Batcher(opt.batch_size_test)
+    batcher = Batcher(opt.batch_size)
     for batch, target in tqdm(batcher.batch(test_docs, yte), desc='evaluation: '):
         logits = model(batch)
         loss = criterion(logits, target_type(target, criterion, opt.device)).item()
@@ -243,8 +243,6 @@ if __name__ == '__main__':
                         help=f'dataset, one in {available_datasets}')
     parser.add_argument('--batch-size', type=int, default=100, metavar='int',
                         help='input batch size (default: 100)')
-    parser.add_argument('--batch-size-test', type=int, default=250, metavar='int',
-                        help='batch size for testing (default: 250)')
     parser.add_argument('--nepochs', type=int, default=200, metavar='int',
                         help='number of epochs (default: 200)')
     parser.add_argument('--patience', type=int, default=10, metavar='int',

@@ -36,7 +36,7 @@ def init_Net(nC, bert, wce, device):
 
 
 def set_method_name():
-    method_name = opt.net
+    method_name = opt.net + '-bert'
     if opt.supervised:
         method_name += f'-supervised-d{opt.sup_drop}-{opt.supervised_method}'
         if opt.tunable:

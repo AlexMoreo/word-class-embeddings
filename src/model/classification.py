@@ -48,9 +48,10 @@ class Token2BertEmbeddings:
         max_length = min(self.max_length, max(map(len,tokens)))  # for dynamic padding
         cls_t = self.tokenizer.cls_token
         sep_t = self.tokenizer.sep_token
+        pad_idx = self.tokenizer.pad_token_id
         tokens = [[cls_t] + d[:max_length] + [sep_t] for d in tokens]
         index = [
-            self.tokenizer.convert_tokens_to_ids(doc) + [self.pad_idx] * (max_length - len(doc)) for doc in
+            self.tokenizer.convert_tokens_to_ids(doc) + [pad_idx] * (max_length - len(doc)) for doc in
             tokens
         ]
         #index = [

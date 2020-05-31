@@ -167,7 +167,7 @@ class Batcher:
         self.offset = 0
 
     def batch(self, X, y):
-        assert len(X) == len(y), 'inconsistent sizes in args'
+        assert len(X) == y.shape[0], 'inconsistent sizes in args'
         concat_y = vstack if issparse(y) else np.concatenate
         n_batches = math.ceil(len(X) / self.batchsize)
         allow_circular = self.max_epoch_length is not None

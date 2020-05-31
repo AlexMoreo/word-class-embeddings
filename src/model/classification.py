@@ -51,7 +51,7 @@ class Token2BertEmbeddings:
         pad_idx = self.tokenizer.pad_token_id
         tokens = [[cls_t] + d[:max_length] + [sep_t] for d in tokens]
         index = [
-            self.tokenizer.convert_tokens_to_ids(doc) + [pad_idx] * (max_length - len(doc)) for doc in
+            self.tokenizer.convert_tokens_to_ids(doc) + [pad_idx] * (max_length - (len(doc)-2)) for doc in
             tokens
         ]
         #index = [
@@ -105,25 +105,25 @@ class BertWCEClassifier(nn.Module):
                  net_type,
                  output_size,
                  hidden_size,
-                 text2bert_embeddings,
-                 text2wce_embeddings):
+                 token2bert_embeddings,
+                 token2wce_embeddings):
         super(BertWCEClassifier, self).__init__()
 
-        emb_dim = text2bert_embeddings.dim() + (0 if text2wce_embeddings is None else text2wce_embeddings.dim())
+        emb_dim = token2bert_embeddings.dim() + (0 if token2wce_embeddings is None else token2wce_embeddings.dim())
         print(f'Embedding dimensions {emb_dim}')
 
-        self.text2bert_embeddings = text2bert_embeddings
-        self.text2wce_embeddings = text2wce_embeddings
+        self.token2bert_embeddings = token2bert_embeddings
+        self.token2wce_embeddings = token2wce_embeddings
         self.projection = init__projection(net_type)(emb_dim, hidden_size)
         self.label = nn.Linear(self.projection.dim(), output_size)
 
     def forward(self, input): # list of lists of tokens
         # convert tokens to id for Bert, pad, and get contextualized embeddings
-        contextualized_embeddings = self.text2bert_embeddings.embeddings(input)
+        contextualized_embeddings = self.token2bert_embeddings.embeddings(input)
 
         # convert tokens to ids for WCE, pad, and get WCEs
-        if self.text2wce_embeddings is not None:
-            wce_embeddings = self.text2wce_embeddings(input)
+        if self.token2wce_embeddings is not None:
+            wce_embeddings = self.token2wce_embeddings(input)
             # concatenate Bert embeddings with WCEs
             assert contextualized_embeddings.shape[1] == wce_embeddings.shape[1], 'shape mismatch between Bert and WCE'
             word_emb = torch.cat([contextualized_embeddings, wce_embeddings], dim=-1)
@@ -135,10 +135,10 @@ class BertWCEClassifier(nn.Module):
         return logits
 
     def finetune_pretrained(self):
-        self.text2wce_embeddings.finetune_pretrained()
+        self.token2wce_embeddings.finetune_pretrained()
 
     def xavier_uniform(self):
-        for model in [self.text2wce_embeddings, self.projection, self.label]:
+        for model in [self.token2wce_embeddings, self.projection, self.label]:
             if model is None: continue
             for p in model.parameters():
                 if p.dim() > 1 and p.requires_grad:

@@ -24,8 +24,8 @@ def init_Net(nC, bert, wce, device):
         net_type,
         output_size=nC,
         hidden_size=hidden,
-        text2bert_embeddings=bert,
-        text2wce_embeddings=wce)
+        token2bert_embeddings=bert,
+        token2wce_embeddings=wce)
 
     model.xavier_uniform()
     model = model.to(device)
@@ -96,6 +96,9 @@ def main(opt):
     logfile = init_logfile(method_name, opt)
 
     dataset = Dataset.load(dataset_name=opt.dataset, pickle_path=opt.pickle_path).show()
+    #dataset.devel_raw=dataset.devel_raw[:100]
+    #dataset.devel_target = dataset.devel_target[:100]
+    #dataset.devel_labelmatrix = dataset.devel_labelmatrix[:100]
 
     # tokenize and truncate to max_length
     bert = Token2BertEmbeddings('bert-base-uncased', max_length=opt.max_length, device=opt.device)

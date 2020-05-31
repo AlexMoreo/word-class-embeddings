@@ -239,7 +239,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Neural text classification with Word-Class Embeddings')
     parser.add_argument('--dataset', type=str, default='reuters21578', metavar='str',
                         help=f'dataset, one in {available_datasets}')
-    parser.add_argument('--batch-size', type=int, default=100, metavar='int',
+    parser.add_argument('--batch-size', type=int, default=50, metavar='int',
                         help='input batch size (default: 100)')
     parser.add_argument('--nepochs', type=int, default=200, metavar='int',
                         help='number of epochs (default: 200)')

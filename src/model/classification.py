@@ -37,21 +37,26 @@ class NeuralClassifier(nn.Module):
                 nn.init.xavier_uniform_(p)
 
 
-class Text2BertEmbeddings:
+class Token2BertEmbeddings:
     def __init__(self, pretrained_model_name='bert-base-uncased', max_length=500, device='cuda'):
         self.tokenizer = BertTokenizer.from_pretrained(pretrained_model_name)
         self.model = BertModel.from_pretrained(pretrained_model_name).eval().to(device)
         self.max_length = max_length
         self.device = device
 
-    def embeddings(self, docs):
-        tokens = [self.tokenizer.tokenize(d) for d in docs]
+    def embeddings(self, tokens):
         max_length = min(self.max_length, max(map(len,tokens)))  # for dynamic padding
-
+        cls_t = self.tokenizer.cls_token
+        sep_t = self.tokenizer.sep_token
+        tokens = [[cls_t] + d[:max_length] + [sep_t] for d in tokens]
         index = [
-            self.tokenizer.encode(d, add_special_tokens=True, max_length=max_length+2, pad_to_max_length=True)
-            for d in docs
+            self.tokenizer.convert_tokens_to_ids(doc) + [self.pad_idx] * (max_length - len(doc)) for doc in
+            tokens
         ]
+        #index = [
+        #    self.tokenizer.encode(d, add_special_tokens=True, max_length=max_length+2, pad_to_max_length=True)
+        #    for d in docs
+        #]
         index = torch.tensor(index).to(self.device)
 
         with torch.no_grad():
@@ -65,20 +70,18 @@ class Text2BertEmbeddings:
         return 768
 
 
-class Text2WCEmbeddings(nn.Module):
-    def __init__(self, tokenizer, WCE, WCE_range, WCE_vocab, drop_embedding_prop=0.5, max_length=500, device='cuda'):
-        super(Text2WCEmbeddings, self).__init__()
+class Token2WCEmbeddings(nn.Module):
+    def __init__(self, WCE, WCE_range, WCE_vocab, drop_embedding_prop=0.5, max_length=500, device='cuda'):
+        super(Token2WCEmbeddings, self).__init__()
         assert '[PAD]' in WCE_vocab, 'unknown index for special token [PAD] in WCE vocabulary'
-        self.tokenizer = tokenizer
-        self.max_length = max_length
         self.embed = EmbeddingCustom(len(WCE_vocab), 0, WCE, WCE_range, drop_embedding_prop).to(device)
+        self.max_length = max_length
         self.device = device
         self.vocab = WCE_vocab
         self.pad_idx = self.vocab['[PAD]']
         self.unk_idx = self.vocab['[UNK]']
 
-    def forward(self, docs):
-        tokens = [self.tokenizer.tokenize(d) for d in docs]
+    def forward(self, tokens):
         max_length = min(self.max_length, max(map(len,tokens)))  # for dynamic padding
         tokens = [d[:max_length] for d in tokens]
         index = [

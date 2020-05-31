@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import scipy
 from embedding.supervised import get_supervised_embeddings
 from main import init_logfile, init_optimizer, init_loss
-from model.classification import NeuralClassifier, Text2BertEmbeddings, Text2WCEmbeddings, BertWCEClassifier
+from model.classification import NeuralClassifier, Token2BertEmbeddings, Token2WCEmbeddings, BertWCEClassifier
 from util.early_stop import EarlyStopping
 from util.common import clip_gradient, predict, tokenize_parallel
 from data.dataset import *
@@ -50,14 +50,10 @@ def set_method_name():
     return method_name
 
 
-def embedding_matrix(opt, dataset, tokenizer):
+def embedding_matrix(opt, dataset):
     print('\t[supervised-matrix]')
-    token_list = tokenize_parallel(dataset.devel_raw, tokenizer.tokenize, opt.max_length)
     tfidf = TfidfVectorizer(tokenizer=str.split)
-    Xtr = tfidf.fit_transform(token_list)
-
-    #tfidf = TfidfVectorizer(tokenizer=tokenizer.tokenize)
-    #Xtr = tfidf.fit_transform(dataset.devel_raw)
+    Xtr = tfidf.fit_transform(dataset.devel_raw)  # already tokenized and trunctated
 
     print('\t[tokenization complete]')
     Ytr = dataset.devel_labelmatrix
@@ -75,6 +71,11 @@ def embedding_matrix(opt, dataset, tokenizer):
 
     print('[supervised-matrix]')
     return WCE, WCE_range, WCE_vocab
+
+
+def tokenize_and_truncate(dataset, tokenizer, max_length):
+    dataset.devel_raw = tokenize_parallel(dataset.devel_raw, tokenizer.tokenize, max_length)
+    dataset.test_raw = tokenize_parallel(dataset.test_raw, tokenizer.tokenize, max_length)
 
 
 def train_val_test(dataset):
@@ -96,21 +97,18 @@ def main(opt):
 
     dataset = Dataset.load(dataset_name=opt.dataset, pickle_path=opt.pickle_path).show()
 
-
-    #dataset.devel_raw = dataset.devel_raw[:500]
-    #dataset.devel_target = dataset.devel_target[:500]
-    #dataset.devel_labelmatrix = dataset.devel_labelmatrix[:500]
-
-
-    bert = Text2BertEmbeddings('bert-base-uncased', device=opt.device)
+    # tokenize and truncate to max_length
+    bert = Token2BertEmbeddings('bert-base-uncased', max_length=opt.max_length, device=opt.device)
+    tokenize_and_truncate(dataset, bert.tokenizer, opt.max_length)
 
     # dataset split tr/val/test
     (train_docs, ytr), (val_docs, yval), (test_docs, yte) = train_val_test(dataset)
 
     wce = None
     if opt.supervised:
-        WCE, WCE_range, WCE_vocab = embedding_matrix(opt, dataset, bert.tokenizer)
-        wce = Text2WCEmbeddings(bert.tokenizer, WCE, WCE_range, WCE_vocab, drop_embedding_prop=opt.sup_drop, device=opt.device)
+        WCE, WCE_range, WCE_vocab = embedding_matrix(opt, dataset)
+        wce = Token2WCEmbeddings(bert.tokenizer, WCE, WCE_range, WCE_vocab, drop_embedding_prop=opt.sup_drop,
+                                 device=opt.device, max_length=opt.max_length)
 
     model = init_Net(dataset.nC, bert, wce, opt.device)
     optim = init_optimizer(model, lr=opt.lr, weight_decay=opt.weight_decay)
@@ -289,7 +287,7 @@ if __name__ == '__main__':
                              'number of components is applied (default 300)')
     parser.add_argument('--max-epoch-length', type=int, default=None, metavar='int',
                         help='number of (batched) training steps before considering an epoch over (None: full epoch)') #300 for wipo-sl-sc
-    parser.add_argument('--max-length', type=int, default=500, metavar='int',
+    parser.add_argument('--max-length', type=int, default=250, metavar='int',
                         help='max document length (in #tokens) after which a document will be cut')
     parser.add_argument('--force', action='store_true', default=False,
                         help='do not check if this experiment has already been run')

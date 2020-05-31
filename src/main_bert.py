@@ -53,7 +53,7 @@ def set_method_name():
 def embedding_matrix(opt, dataset):
     print('\t[supervised-matrix]')
     tfidf = TfidfVectorizer(tokenizer=str.split)
-    Xtr = tfidf.fit_transform(dataset.devel_raw)  # already tokenized and trunctated
+    Xtr = tfidf.fit_transform([' '.join(tokens) for tokens in dataset.devel_raw])  # already tokenized and trunctated
 
     print('\t[tokenization complete]')
     Ytr = dataset.devel_labelmatrix

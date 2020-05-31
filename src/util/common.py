@@ -129,7 +129,7 @@ def get_parallel_slices(n_tasks, n_jobs=-1):
 
 
 def tokenize_job(documents, tokenizer, max_tokens, job):
-    return [' '.join(tokenizer(d)[:max_tokens]) for d in tqdm(documents, desc=f'tokenizing [job: {job}]')]
+    return [tokenizer(d)[:max_tokens] for d in tqdm(documents, desc=f'tokenizing [job: {job}]')]
 
 
 def tokenize_parallel(documents, tokenizer, max_tokens, n_jobs=-1):

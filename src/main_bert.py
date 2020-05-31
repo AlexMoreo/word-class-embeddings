@@ -107,8 +107,9 @@ def main(opt):
     wce = None
     if opt.supervised:
         WCE, WCE_range, WCE_vocab = embedding_matrix(opt, dataset)
-        wce = Token2WCEmbeddings(bert.tokenizer, WCE, WCE_range, WCE_vocab, drop_embedding_prop=opt.sup_drop,
-                                 device=opt.device, max_length=opt.max_length)
+        wce = Token2WCEmbeddings(
+            WCE, WCE_range, WCE_vocab, drop_embedding_prop=opt.sup_drop, device=opt.device, max_length=opt.max_length
+        )
 
     model = init_Net(dataset.nC, bert, wce, opt.device)
     optim = init_optimizer(model, lr=opt.lr, weight_decay=opt.weight_decay)

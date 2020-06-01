@@ -4,6 +4,9 @@ import numpy as np
 from tqdm import tqdm
 import torch
 from scipy.sparse import vstack, issparse
+from joblib import Parallel, delayed
+import multiprocessing
+import itertools
 
 
 def index(data, vocab, known_words, analyzer, unk_index, out_of_vocabulary):
@@ -71,7 +74,7 @@ def get_word_list(word2index1, word2index2=None): #TODO: redo
     return word_list
 
 
-def batchify(index_list, labels, batchsize, pad_index, target_long=False, max_pad_length=500):
+def batchify(index_list, labels, batchsize, pad_index, device, target_long=False, max_pad_length=500):
     nsamples = len(index_list)
     nbatches = nsamples // batchsize + 1*(nsamples%batchsize>0)
     for b in range(nbatches):
@@ -83,17 +86,17 @@ def batchify(index_list, labels, batchsize, pad_index, target_long=False, max_pa
         batch = torch.LongTensor(batch)
         totype = torch.LongTensor if target_long else torch.FloatTensor
         target = totype(batch_labels)
-        yield batch.cuda(), target.cuda()
+        yield batch.to(device), target.to(device)
 
 
-def batchify_unlabelled(index_list, batchsize, pad_index, max_pad_length=500):
+def batchify_unlabelled(index_list, batchsize, pad_index, device, max_pad_length=500):
     nsamples = len(index_list)
     nbatches = nsamples // batchsize + 1*(nsamples%batchsize>0)
     for b in range(nbatches):
         batch = index_list[b*batchsize:(b+1)*batchsize]
         batch = pad(batch, pad_index=pad_index, max_pad_length=max_pad_length)
         batch = torch.LongTensor(batch)
-        yield batch.cuda()
+        yield batch.to(device)
 
 
 def clip_gradient(model, clip_value=1e-1):
@@ -117,7 +120,26 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
+def get_parallel_slices(n_tasks, n_jobs=-1):
+    if n_jobs==-1:
+        n_jobs = multiprocessing.cpu_count()
+    batch = int(n_tasks / n_jobs)
+    remainder = n_tasks % n_jobs
+    return [slice(job*batch, (job+1)*batch+ (remainder if job == n_jobs - 1 else 0)) for job in range(n_jobs)]
 
 
+def tokenize_job(documents, tokenizer, max_tokens, job):
+    return [tokenizer(d)[:max_tokens] for d in tqdm(documents, desc=f'tokenizing [job: {job}]')]
+
+
+def tokenize_parallel(documents, tokenizer, max_tokens, n_jobs=-1):
+    slices = get_parallel_slices(n_tasks=len(documents), n_jobs=n_jobs)
+    tokens = Parallel(n_jobs=n_jobs)(
+        delayed(tokenize_job)(
+            documents[slice_i], tokenizer, max_tokens, job
+        )
+        for job, slice_i in enumerate(slices)
+    )
+    return list(itertools.chain.from_iterable(tokens))
 
 

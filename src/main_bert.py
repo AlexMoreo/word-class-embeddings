@@ -121,7 +121,8 @@ def main(opt):
     # train-validate
     tinit = time()
     create_if_not_exist(opt.checkpoint_dir)
-    early_stop = EarlyStopping(model, patience=opt.patience, checkpoint=f'{opt.checkpoint_dir}/{opt.net}-{opt.dataset}')
+    early_stop = EarlyStopping(model, patience=opt.patience,
+                               checkpoint=f'{opt.checkpoint_dir}/{opt.net}-{opt.dataset}' if not opt.plotmode else None)
 
     train_batcher = Batcher(opt.batch_size, opt.max_epoch_length)
     for epoch in range(1, opt.nepochs + 1):

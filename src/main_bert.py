@@ -69,7 +69,7 @@ def embedding_matrix(opt, dataset):
     WCE = np.vstack((WCE, np.zeros(shape=(num_missing_rows, WCE.shape[1]))))
     WCE = torch.from_numpy(WCE).float()
 
-    print('[supervised-matrix]')
+    print(f'[supervised-matrix] shape={WCE.shape}')
     return WCE, WCE_range, WCE_vocab
 
 

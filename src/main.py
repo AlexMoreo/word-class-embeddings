@@ -2,7 +2,7 @@ import argparse
 from scipy.sparse import csr_matrix
 from sklearn.model_selection import train_test_split
 import scipy
-from embedding.supervised import get_supervised_embeddings
+from embedding.supervised import get_supervised_embeddings, STWFUNCTIONS
 from model.classification import NeuralClassifier
 from util.early_stop import EarlyStopping
 from util.common import *
@@ -344,10 +344,14 @@ if __name__ == '__main__':
     print(f'running on {opt.device}')
     torch.manual_seed(opt.seed)
 
-    assert opt.dataset in available_datasets, f'unknown dataset {opt.dataset}'
-    assert opt.pretrained in [None]+AVAILABLE_PRETRAINED, f'unknown pretrained set {opt.pretrained}'
-    assert not opt.plotmode or opt.test_each > 0, 'plot mode implies --test-each>0'
-    assert opt.supervised_method in ['dotn', 'ppmi', 'ig', 'chi2']
+    assert opt.dataset in available_datasets, \
+        f'unknown dataset {opt.dataset}'
+    assert opt.pretrained in [None]+AVAILABLE_PRETRAINED, \
+        f'unknown pretrained set {opt.pretrained}'
+    assert not opt.plotmode or opt.test_each > 0, \
+        'plot mode implies --test-each>0'
+    assert opt.supervised_method in STWFUNCTIONS, \
+        f'unknown supervised term weighting function; allowed are {STWFUNCTIONS}'
     if opt.pickle_dir:
         opt.pickle_path = join(opt.pickle_dir, f'{opt.dataset}.pickle')
 

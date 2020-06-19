@@ -1,7 +1,10 @@
-from data.tsr_function__ import get_supervised_matrix, get_tsr_matrix, information_gain, chi_square
+from data.tsr_function__ import get_supervised_matrix, get_tsr_matrix, information_gain, chi_square, conf_weight
 from model.embedding_predictor import EmbeddingPredictor
 from util.common import *
 from sklearn.decomposition import PCA
+
+
+STWFUNCTIONS = ['dotn', 'ppmi', 'ig', 'chi2', 'cw']
 
 
 def zscores(x, axis=0): #scipy.stats.zscores does not avoid division by 0, which can indeed occur
@@ -55,6 +58,8 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
         F = supervised_embeddings_tsr(X, Y, information_gain)
     elif method == 'chi2':
         F = supervised_embeddings_tsr(X, Y, chi_square)
+    elif method == 'cw':
+        F = supervised_embeddings_tsr(X, Y, conf_weight)
 
     if dozscore:
         F = zscores(F, axis=0)

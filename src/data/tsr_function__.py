@@ -7,6 +7,9 @@ import time
 from scipy.sparse import csr_matrix, csc_matrix
 
 
+STWFUNCTIONS = ['dotn', 'ppmi', 'ig', 'chi2', 'cw', 'wp']
+
+
 def get_probs(tpr, fpr, pc):
     # tpr = p(t|c) = p(tp)/p(c) = p(tp)/(p(tp)+p(fn))
     # fpr = p(t|_c) = p(fp)/p(_c) = p(fp)/(p(fp)+p(tn))
@@ -102,6 +105,7 @@ def conf_interval(xt, n):
     amplitude = 0.5 * z2 * math.sqrt((p * (1.0 - p)) / (n + z2))
     return p, amplitude
 
+
 def strength(minPosRelFreq, minPos, maxNeg):
     if minPos > maxNeg:
         return math.log(2.0 * minPosRelFreq, 2.0)
@@ -131,6 +135,10 @@ def conf_weight(cell, cancel_features=False):
         return 1e-20
 
     return str_tplus;
+
+
+def word_prob(cell):
+    return cell.tpr()
 
 
 class ContTable:

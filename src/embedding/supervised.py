@@ -1,10 +1,8 @@
-from data.tsr_function__ import get_supervised_matrix, get_tsr_matrix, information_gain, chi_square, conf_weight
+from data.tsr_function__ import get_supervised_matrix, get_tsr_matrix, information_gain, chi_square, conf_weight, word_prob
 from model.embedding_predictor import EmbeddingPredictor
 from util.common import *
 from sklearn.decomposition import PCA
-
-
-STWFUNCTIONS = ['dotn', 'ppmi', 'ig', 'chi2', 'cw']
+from data.tsr_function__ import  STWFUNCTIONS
 
 
 def zscores(x, axis=0): #scipy.stats.zscores does not avoid division by 0, which can indeed occur
@@ -60,11 +58,13 @@ def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_probl
         F = supervised_embeddings_tsr(X, Y, chi_square)
     elif method == 'cw':
         F = supervised_embeddings_tsr(X, Y, conf_weight)
+    elif method == 'wp':
+        F = supervised_embeddings_tsr(X, Y, word_prob)
 
     if dozscore:
         F = zscores(F, axis=0)
 
-    if nC > max_label_space:
+    if max_label_space!=-1 and nC > max_label_space:
         print(f'supervised matrix has more dimensions ({nC}) than the allowed limit {max_label_space}. '
               f'Applying PCA(n_components={max_label_space})')
         pca = PCA(n_components=max_label_space)

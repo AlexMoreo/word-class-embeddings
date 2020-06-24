@@ -94,7 +94,10 @@ def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabula
             print('\t[supervised-matrix]')
             Xtr, _ = dataset.vectorize()
             Ytr = dataset.devel_labelmatrix
-            F = get_supervised_embeddings(Xtr, Ytr, method=opt.supervised_method)
+            F = get_supervised_embeddings(Xtr, Ytr,
+                                          method=opt.supervised_method,
+                                          max_label_space=opt.max_label_space,
+                                          dozscore=(not opt.nozscore))
             num_missing_rows = vocabsize - F.shape[0]
             F = np.vstack((F, np.zeros(shape=(num_missing_rows, F.shape[1]))))
             F = torch.from_numpy(F).float()
@@ -337,6 +340,8 @@ if __name__ == '__main__':
                         help='do not check if this experiment has already been run')
     parser.add_argument('--tunable', action='store_true', default=False,
                         help='pretrained embeddings are tunable from the beginning (default False, i.e., static)')
+    parser.add_argument('--nozscore', action='store_true', default=False,
+                        help='disables z-scoring form the computation of WCE')
 
     opt = parser.parse_args()
 

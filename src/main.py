@@ -101,6 +101,7 @@ def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabula
             num_missing_rows = vocabsize - F.shape[0]
             F = np.vstack((F, np.zeros(shape=(num_missing_rows, F.shape[1]))))
             F = torch.from_numpy(F).float()
+            print(f'\tsupervised-matris has shape={F.shape}')
 
             offset = 0
             if pretrained_embeddings:
@@ -347,6 +348,7 @@ if __name__ == '__main__':
 
     opt.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     print(f'running on {opt.device}')
+    assert f'{opt.device}'=='cuda', 'forced cuda device but cpu found'
     torch.manual_seed(opt.seed)
 
     assert opt.dataset in available_datasets, \

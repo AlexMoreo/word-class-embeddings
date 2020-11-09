@@ -1,6 +1,7 @@
 from model.layers import *
 from transformers import BertModel, BertTokenizer
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -13,12 +14,13 @@ class NeuralClassifier(nn.Module):
                  hidden_size,
                  vocab_size,
                  learnable_length,
-                 pretrained = None,
+                 pretrained=None,
                  drop_embedding_range=None,
                  drop_embedding_prop=0):
         super(NeuralClassifier, self).__init__()
 
-        self.embed = EmbeddingCustom(vocab_size, learnable_length, pretrained, drop_embedding_range, drop_embedding_prop)
+        self.embed = EmbeddingCustom(vocab_size, learnable_length, pretrained, drop_embedding_range,
+                                     drop_embedding_prop)
         self.projection = init__projection(net_type)(self.embed.dim(), hidden_size)
         self.label = nn.Linear(self.projection.dim(), output_size)
 
@@ -45,26 +47,26 @@ class Token2BertEmbeddings:
         self.device = device
 
     def embeddings(self, tokens):
-        max_length = min(self.max_length, max(map(len,tokens)))  # for dynamic padding
+        max_length = min(self.max_length, max(map(len, tokens)))  # for dynamic padding
         cls_t = self.tokenizer.cls_token
         sep_t = self.tokenizer.sep_token
         pad_idx = self.tokenizer.pad_token_id
         tokens = [[cls_t] + d[:max_length] + [sep_t] for d in tokens]
         index = [
-            self.tokenizer.convert_tokens_to_ids(doc) + [pad_idx] * (max_length - (len(doc)-2)) for doc in
+            self.tokenizer.convert_tokens_to_ids(doc) + [pad_idx] * (max_length - (len(doc) - 2)) for doc in
             tokens
         ]
-        #index = [
+        # index = [
         #    self.tokenizer.encode(d, add_special_tokens=True, max_length=max_length+2, pad_to_max_length=True)
         #    for d in docs
-        #]
+        # ]
         index = torch.tensor(index).to(self.device)
 
         with torch.no_grad():
             outputs = self.model(index)
             contextualized_embeddings = outputs[0]
             # ignore embeddings for [CLS] and las one (either [SEP] or last [PAD])
-            contextualized_embeddings = contextualized_embeddings[:,1:-1,:]
+            contextualized_embeddings = contextualized_embeddings[:, 1:-1, :]
             return contextualized_embeddings
 
     def dim(self):
@@ -83,10 +85,11 @@ class Token2WCEmbeddings(nn.Module):
         self.unk_idx = self.vocab['[UNK]']
 
     def forward(self, tokens):
-        max_length = min(self.max_length, max(map(len,tokens)))  # for dynamic padding
+        max_length = min(self.max_length, max(map(len, tokens)))  # for dynamic padding
         tokens = [d[:max_length] for d in tokens]
         index = [
-            [self.vocab.get(ti, self.unk_idx) for ti in doc] + [self.pad_idx]*(max_length - len(doc)) for doc in tokens
+            [self.vocab.get(ti, self.unk_idx) for ti in doc] + [self.pad_idx] * (max_length - len(doc)) for doc in
+            tokens
         ]
         index = torch.tensor(index).to(self.device)
         return self.embed(index)
@@ -117,7 +120,7 @@ class BertWCEClassifier(nn.Module):
         self.projection = init__projection(net_type)(emb_dim, hidden_size)
         self.label = nn.Linear(self.projection.dim(), output_size)
 
-    def forward(self, input): # list of lists of tokens
+    def forward(self, input):  # list of lists of tokens
         # convert tokens to id for Bert, pad, and get contextualized embeddings
         contextualized_embeddings = self.token2bert_embeddings.embeddings(input)
 
@@ -153,3 +156,52 @@ def init__projection(net_type):
         return LSTMprojection
     elif net_type == 'attn':
         return ATTNprojection
+
+
+class BertClassifier(nn.Module):
+
+    def __init__(self, output_size, pretrained_model_name='bert-base-uncased', max_length=500, dropout=0.1,
+                 device='cuda'):
+        super(BertClassifier, self).__init__()
+        self.tokenizer = BertTokenizer.from_pretrained(pretrained_model_name)
+        self.model = BertModel.from_pretrained(pretrained_model_name).eval().to(device)
+        self.dropout = nn.Dropout(dropout)
+        self.classification = nn.Linear(self.dim(), output_size)
+        self.max_length = max_length
+        self.device = device
+
+    def cls_embedding_from_bert_model(self, tokens):
+        max_length = min(self.max_length, max(map(len, tokens)))  # for dynamic padding
+        cls_t = self.tokenizer.cls_token
+        sep_t = self.tokenizer.sep_token
+        pad_idx = self.tokenizer.pad_token_id
+        tokens = [[cls_t] + d[:max_length] + [sep_t] for d in tokens]
+        index = [
+            self.tokenizer.convert_tokens_to_ids(doc) + [pad_idx] * (max_length - (len(doc) - 2)) for doc in
+            tokens
+        ]
+        # index = [
+        #    self.tokenizer.encode(d, add_special_tokens=True, max_length=max_length+2, pad_to_max_length=True)
+        #    for d in docs
+        # ]
+        index = torch.tensor(index).to(self.device)
+
+        outputs = self.model(index)
+        # get [CLS] embedding
+        return outputs[0][:, 0, :]
+
+    def dim(self):
+        return 768
+
+    def forward(self, input):  # list of lists of tokens
+        cls_embedding = self.cls_embedding_from_bert_model(input)
+        cls_embedding = self.dropout(cls_embedding)
+        logits = self.classification(cls_embedding)
+        return logits
+
+    def xavier_uniform(self):
+        for model in [self.classification]:
+            if model is None: continue
+            for p in model.parameters():
+                if p.dim() > 1 and p.requires_grad:
+                    nn.init.xavier_uniform_(p)

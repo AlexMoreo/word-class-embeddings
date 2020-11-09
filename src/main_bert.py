@@ -78,10 +78,10 @@ def tokenize_and_truncate(dataset, tokenizer, max_length):
     dataset.test_raw = tokenize_parallel(dataset.test_raw, tokenizer.tokenize, max_length)
 
 
-def train_val_test(dataset):
+def train_val_test(dataset, seed):
     val_size = min(int(len(dataset.devel_raw) * .2), 20000)
     train_docs, val_docs, ytr, yval = train_test_split(
-        dataset.devel_raw, dataset.devel_target, test_size=val_size, random_state=opt.seed, shuffle=True
+        dataset.devel_raw, dataset.devel_target, test_size=val_size, random_state=seed, shuffle=True
     )
     return (train_docs, ytr), (val_docs, yval), (dataset.test_raw, dataset.test_target)
 
@@ -105,7 +105,7 @@ def main(opt):
     tokenize_and_truncate(dataset, bert.tokenizer, opt.max_length)
 
     # dataset split tr/val/test
-    (train_docs, ytr), (val_docs, yval), (test_docs, yte) = train_val_test(dataset)
+    (train_docs, ytr), (val_docs, yval), (test_docs, yte) = train_val_test(dataset, opt.seed)
 
     wce = None
     if opt.supervised:

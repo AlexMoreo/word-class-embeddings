@@ -126,15 +126,15 @@ def main(opt):
 
     train_batcher = Batcher(opt.batch_size, opt.max_epoch_length)
     for epoch in range(1, opt.nepochs + 1):
-        train(model, train_docs, ytr, tinit, logfile, criterion, optim, epoch, method_name, train_batcher)
+        train(model, train_docs, ytr, tinit, logfile, criterion, optim, epoch, method_name, train_batcher, opt)
 
         # validation
-        macrof1 = test(model, val_docs, yval, dataset.classification_type, tinit, epoch, logfile, criterion, 'va')
+        macrof1 = test(model, val_docs, yval, dataset.classification_type, tinit, epoch, logfile, criterion, 'va', opt)
         early_stop(macrof1, epoch)
         if opt.test_each>0:
             if (opt.plotmode and (epoch==1 or epoch%opt.test_each==0)) or \
                     (not opt.plotmode and epoch%opt.test_each==0 and epoch<opt.nepochs):
-                test(model, test_docs, yte, dataset.classification_type, tinit, epoch, logfile, criterion, 'te')
+                test(model, test_docs, yte, dataset.classification_type, tinit, epoch, logfile, criterion, 'te', opt)
 
         if early_stop.STOP:
             print('[early-stop]')
@@ -152,12 +152,13 @@ def main(opt):
 
         if opt.val_epochs>0:
             print(f'last {opt.val_epochs} epochs on the validation set')
+            val_batcher = Batcher(opt.batch_size, opt.max_epoch_length)
             for val_epoch in range(1, opt.val_epochs + 1):
-                train(model, val_docs, yval, tinit, logfile, criterion, optim, epoch+val_epoch, method_name)
+                train(model, val_docs, yval, tinit, logfile, criterion, optim, epoch+val_epoch, method_name, val_batcher, opt)
 
         # test
         print('Training complete: testing')
-        test(model, test_docs, yte, dataset.classification_type, tinit, epoch, logfile, criterion, 'final-te')
+        test(model, test_docs, yte, dataset.classification_type, tinit, epoch, logfile, criterion, 'final-te', opt)
 
 
 class Batcher:
@@ -193,7 +194,7 @@ class Batcher:
             self.offset = to_
 
 
-def train(model, train_index, ytr, tinit, logfile, criterion, optim, epoch, method_name, train_batch):
+def train(model, train_index, ytr, tinit, logfile, criterion, optim, epoch, method_name, train_batch, opt):
 
     loss_history = []
     model.train()
@@ -214,15 +215,16 @@ def train(model, train_index, ytr, tinit, logfile, criterion, optim, epoch, meth
     return mean_loss
 
 
-def test(model, test_docs, yte, classification_type, tinit, epoch, logfile, criterion, measure_prefix):
+def test(model, test_docs, yte, classification_type, tinit, epoch, logfile, criterion, measure_prefix, opt):
     model.eval()
     predictions = []
     batcher = Batcher(opt.batch_size)
-    for batch, target in tqdm(batcher.batch(test_docs, yte), desc='evaluation: '):
-        logits = model(batch)
-        loss = criterion(logits, target_type(target, criterion, opt.device)).item()
-        prediction = csr_matrix(predict(logits, classification_type=classification_type))
-        predictions.append(prediction)
+    with torch.no_grad():
+        for batch, target in tqdm(batcher.batch(test_docs, yte), desc='evaluation: '):
+            logits = model(batch)
+            loss = criterion(logits, target_type(target, criterion, opt.device)).item()
+            prediction = csr_matrix(predict(logits, classification_type=classification_type))
+            predictions.append(prediction)
 
     yte_ = scipy.sparse.vstack(predictions)
     Mf1, mf1, acc = evaluation(yte, yte_, classification_type)
@@ -245,7 +247,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, default='reuters21578', metavar='str',
                         help=f'dataset, one in {available_datasets}')
     parser.add_argument('--batch-size', type=int, default=50, metavar='int',
-                        help='input batch size (default: 100)')
+                        help='input batch size (default: 50)')
     parser.add_argument('--nepochs', type=int, default=200, metavar='int',
                         help='number of epochs (default: 200)')
     parser.add_argument('--patience', type=int, default=10, metavar='int',

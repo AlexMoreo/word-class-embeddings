@@ -164,7 +164,7 @@ class BertClassifier(nn.Module):
                  device='cuda'):
         super(BertClassifier, self).__init__()
         self.tokenizer = BertTokenizer.from_pretrained(pretrained_model_name)
-        self.model = BertModel.from_pretrained(pretrained_model_name).eval().to(device)
+        self.model = BertModel.from_pretrained(pretrained_model_name).to(device)
         self.dropout = nn.Dropout(dropout)
         self.classification = nn.Linear(self.dim(), output_size)
         self.max_length = max_length
@@ -188,7 +188,7 @@ class BertClassifier(nn.Module):
 
         outputs = self.model(index)
         # get [CLS] embedding
-        return outputs[0][:, 0, :]
+        return outputs[1]
 
     def dim(self):
         return 768

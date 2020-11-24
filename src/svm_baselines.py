@@ -1,4 +1,8 @@
 import warnings
+
+from model.CustomRepresentationLearning import CustomRepresentationModel
+from util import file
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 from sklearn.feature_extraction.text import CountVectorizer
 from supervised_term_weighting.supervised_vectorizer import TSRweighting
@@ -17,11 +21,12 @@ from embedding.pretrained import GloVe
 from embedding.supervised import get_supervised_embeddings
 
 
-def cls_performance(Xtr, ytr, Xte, yte, classification_type, optimizeC=True, estimator=LinearSVC, class_weight='balanced'):
+def cls_performance(Xtr, ytr, Xte, yte, classification_type, optimizeC=True, estimator=LinearSVC,
+                    class_weight='balanced'):
     print('training learner...')
     tinit = time()
     param_grid = {'C': np.logspace(-3, 3, 7)} if optimizeC else None
-    cv=5
+    cv = 5
     if classification_type == 'multilabel':
         cls = MLSVC(n_jobs=-1, estimator=estimator, class_weight=class_weight)
         cls.fit(Xtr, _todense(ytr), param_grid=param_grid, cv=cv)
@@ -40,7 +45,7 @@ def cls_performance(Xtr, ytr, Xte, yte, classification_type, optimizeC=True, est
 def embedding_matrix(dataset, pretrained=False, supervised=False):
     assert pretrained or supervised, 'useless call without requiring pretrained and/or supervised embeddings'
     vocabulary = dataset.vocabulary
-    vocabulary = np.asarray(list(zip(*sorted(vocabulary.items(), key=lambda x:x[1])))[0])
+    vocabulary = np.asarray(list(zip(*sorted(vocabulary.items(), key=lambda x: x[1])))[0])
 
     print('[embedding matrix]')
     pretrained_embeddings = []
@@ -65,18 +70,24 @@ def embedding_matrix(dataset, pretrained=False, supervised=False):
 
 
 def tsr(name):
-    name=name.lower()
-    if name=='ig': return information_gain
-    elif name=='pmi': return pointwise_mutual_information
-    elif name=='gr': return gain_ratio
-    elif name=='chi': return chi_square
-    elif name=='rf': return relevance_frequency
-    elif name=='cw': return conf_weight
+    name = name.lower()
+    if name == 'ig':
+        return information_gain
+    elif name == 'pmi':
+        return pointwise_mutual_information
+    elif name == 'gr':
+        return gain_ratio
+    elif name == 'chi':
+        return chi_square
+    elif name == 'rf':
+        return relevance_frequency
+    elif name == 'cw':
+        return conf_weight
     else:
         raise ValueError(f'unknown function {name}')
 
 
-def main():
+def main(args):
     logfile = CSVLog(args.log_file, ['dataset', 'method', 'measure', 'value', 'timelapse'], autoflush=True)
     logfile.set_default('dataset', args.dataset)
     learner = LinearSVC if args.learner == 'svm' else LogisticRegression
@@ -87,15 +98,17 @@ def main():
     method_name = f'{learner_name}-{mode}-{"opC" if args.optimc else "default"}'
 
     logfile.set_default('method', method_name)
-    assert not logfile.already_calculated(), f'baseline {method_name} for {args.dataset} already calculated'
+    assert not logfile.already_calculated() or args.force, f'baseline {method_name} for {args.dataset} already calculated'
 
-    dataset = Dataset.load(dataset_name=args.dataset, pickle_path=args.pickle_path)
-    class_weight='balanced' if args.balanced else None
+    dataset = Dataset.load(dataset_name=args.dataset,
+                           pickle_path=os.path.join(args.pickle_dir, f'{args.dataset}.pickle'))
+
+    class_weight = 'balanced' if args.balanced else None
     print(f'running with class_weight={class_weight}')
 
-    #tfidf = TfidfVectorizer(min_df=5)
-    #Xtr = tfidf.fit_transform(dataset.devel_raw)
-    #Xte = tfidf.transform(dataset.test_raw)
+    # tfidf = TfidfVectorizer(min_df=5)
+    # Xtr = tfidf.fit_transform(dataset.devel_raw)
+    # Xte = tfidf.transform(dataset.test_raw)
     ytr, yte = dataset.devel_target, dataset.test_target
     if args.mode == 'stw':
         print('Supervised Term Weighting')
@@ -108,23 +121,53 @@ def main():
     else:
         Xtr, Xte = dataset.vectorize()
 
+    if mode in ['bert', 'bert-sup']:
+        # load best model and get document embeddings for the dataset
+        bert_filename = os.path.join(args.pickle_dir, f'{args.dataset}_BERTembeddings_{args.combine_strategy}.pickle')
+        if file.exists(bert_filename) and not args.force_embeddings:
+            print('Loading pre-computed BERT document embeddings')
+            with open(bert_filename, mode='rb') as inputfile:
+                NLMtr, NLMte = pickle.load(inputfile)
+        else:
+            print('Computing BERT document embeddings')
+            model = CustomRepresentationModel('bert', os.path.join(args.model_dir, args.dataset, 'best_model'))
 
-    if args.mode in ['tfidf', 'stw']:
-        sup_tend=0
+            NLMtr = model.encode_sentences(dataset.devel_raw, combine_strategy=args.combine_strategy,
+                                           batch_size=args.batch_size)
+            NLMte = model.encode_sentences(dataset.test_raw, combine_strategy=args.combine_strategy,
+                                           batch_size=args.batch_size)
+
+            with open(bert_filename, mode='wb') as outputfile:
+                pickle.dump((NLMtr, NLMte), outputfile)
+
+    if args.mode in ['tfidf', 'stw', 'bert']:
+        sup_tend = 0
     else:
         tinit = time()
         pretrained, supervised = False, False
-        if args.mode=='sup':
-            supervised=True
-        elif args.mode=='glove':
-            pretrained=True
-        elif args.mode=='glove-sup':
+        if args.mode in ['sup', 'bert-sup']:
+            supervised = True
+        elif args.mode == 'glove':
+            pretrained = True
+        elif args.mode == 'glove-sup':
             pretrained, supervised = True, True
         _, F = embedding_matrix(dataset, pretrained=pretrained, supervised=supervised)
         Xtr = Xtr.dot(F)
         Xte = Xte.dot(F)
-        sup_tend = time()-tinit
-    Mf1, mf1, acc, tend = cls_performance(Xtr, ytr, Xte, yte, dataset.classification_type, args.optimc, learner, class_weight=class_weight)
+        sup_tend = time() - tinit
+
+    # concatenating documents vectors from indexing with those from BERT model
+    if mode == 'bert':
+        Xtr = NLMtr
+        Xte = NLMte
+    elif mode == 'bert-sup':
+        Xtr = np.hstack((Xtr, NLMtr))
+        Xte = np.hstack((Xte, NLMte))
+
+    print(Xtr.shape, Xte.shape)
+
+    Mf1, mf1, acc, tend = cls_performance(Xtr, ytr, Xte, yte, dataset.classification_type, args.optimc, learner,
+                                          class_weight=class_weight)
     tend += sup_tend
     logfile.add_row(measure='te-macro-F1', value=Mf1, timelapse=tend)
     logfile.add_row(measure='te-micro-F1', value=mf1, timelapse=tend)
@@ -145,12 +188,14 @@ if __name__ == '__main__':
 
     # Training settings
     parser = argparse.ArgumentParser(description='Text Classification with Embeddings')
-    parser.add_argument('--dataset', type=str, default='rcv1', metavar='N', help=f'dataset, one in {Dataset.dataset_available}')
-    parser.add_argument('--pickle-path', type=str, default=None, metavar='N',
-                        help=f'if set, specifies the path where to save/load the dataset pickled')
+    parser.add_argument('--dataset', type=str, default='rcv1', metavar='N',
+                        help=f'dataset, one in {Dataset.dataset_available}')
+    parser.add_argument('--pickle-dir', type=str, default='../pickles', metavar='str',
+                        help=f'path where to load the pickled dataset from and to save BERT document embeddings')
     parser.add_argument('--log-file', type=str, default='../log/log.csv', metavar='N', help='path to the log csv file')
     parser.add_argument('--learner', type=str, default='svm', metavar='N', help=f'learner (svm or lr)')
-    parser.add_argument('--mode', type=str, default='tfidf', metavar='N', help=f'mode, in tfidf, stw, sup, glove, glove-sup')
+    parser.add_argument('--mode', type=str, default='tfidf', metavar='N',
+                        help=f'mode, in tfidf, stw, sup, glove, glove-sup, bert, bert-sup')
     parser.add_argument('--stwmode', type=str, default='wave', metavar='N',
                         help=f'mode in which the term relevance will be merged (wave, ave, max). Only for --mode stw. '
                              f'Default "wave"')
@@ -165,9 +210,26 @@ if __name__ == '__main__':
                              f'CW (ConfWeight)')
     parser.add_argument('--optimc', action='store_true', default=False, help='optimize the C parameter in the SVM')
     parser.add_argument('--balanced', action='store_true', default=False, help='class weight balanced')
+    parser.add_argument('--combine-strategy', default=None, type=str,
+                        help='Method to determine BERT document embeddings.'
+                             'No value takes the [CLS] embedding.'
+                             '"mean" makes the mean of token embeddings.')
+    parser.add_argument('--model-dir', type=str, default='../models', metavar='str',
+                        help=f'path where the BERT model is stored. Dataset name is added')
+    parser.add_argument('--force-embeddings', action='store_true', default=False,
+                        help='force the computation of embeddings even if a precomputed version is available')
+    parser.add_argument('--batch-size', type=int, default=512, metavar='int',
+                        help='batch size for computation of BERT document embeddings')
+    parser.add_argument('--force', action='store_true', default=False,
+                        help='force the execution of the experiment even if a log already exists')
     args = parser.parse_args()
-    assert args.mode in ['tfidf', 'sup', 'glove', 'glove-sup', 'stw'], 'unknown mode'
-    assert args.mode!='stw' or args.tsr in ['ig', 'pmi', 'gr', 'chi', 'rf', 'cw'], 'unknown tsr'
+    assert args.mode in ['tfidf', 'sup', 'glove', 'glove-sup', 'stw', 'bert', 'bert-sup'], 'unknown mode'
+    assert args.mode != 'stw' or args.tsr in ['ig', 'pmi', 'gr', 'chi', 'rf', 'cw'], 'unknown tsr'
     assert args.stwmode in ['wave', 'ave', 'max'], 'unknown stw-mode'
     assert args.learner in ['svm', 'lr'], 'unknown learner'
-    main()
+    assert args.combine_strategy in [None, 'mean'], 'unknown combine strategy'
+
+    if args.combine_strategy is None:
+        args.combine_strategy = 0
+
+    main(args)

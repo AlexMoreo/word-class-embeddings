@@ -15,6 +15,8 @@ in order to improve the performance of neural classifiers.
 * SciPy (1.2.1)
 * Pandas (0.24.2) 
 * fastText (0.2.0)
+* transformers
+* simpletransformers
 
 ## Generating a Word-Class Embedding matrix
 The script _learn_wordlabel_embeddings.py_ generates the WCE matrix from any dataset. The dataset must be in _fastText_ format (i.e., one already-preprocessed document for each line with labels indicated by a prefix `__label__<labelname>`). The WCE matrix is stored in disk in txt format (`<word> <dim1> <dim2> ... <dimn>\n`); support for .bin files will be added soon.

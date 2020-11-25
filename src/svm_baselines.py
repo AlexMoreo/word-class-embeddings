@@ -123,7 +123,7 @@ def main(args):
 
     if mode in ['bert', 'bert-sup']:
         # load best model and get document embeddings for the dataset
-        bert_filename = os.path.join(args.pickle_dir, f'{args.dataset}_BERTembeddings_{args.combine_strategy}.pickle')
+        bert_filename = os.path.join(args.embedding_dir, f'{args.dataset}_BERTembeddings_{args.combine_strategy}.pickle')
         if file.exists(bert_filename) and not args.force_embeddings:
             print('Loading pre-computed BERT document embeddings')
             with open(bert_filename, mode='rb') as inputfile:
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, default='rcv1', metavar='N',
                         help=f'dataset, one in {Dataset.dataset_available}')
     parser.add_argument('--pickle-dir', type=str, default='../pickles', metavar='str',
-                        help=f'path where to load the pickled dataset from and to save BERT document embeddings')
+                        help=f'path where to load the pickled dataset from')
     parser.add_argument('--log-file', type=str, default='../log/log.csv', metavar='N', help='path to the log csv file')
     parser.add_argument('--learner', type=str, default='svm', metavar='N', help=f'learner (svm or lr)')
     parser.add_argument('--mode', type=str, default='tfidf', metavar='N',
@@ -214,6 +214,8 @@ if __name__ == '__main__':
                         help='Method to determine BERT document embeddings.'
                              'No value takes the [CLS] embedding.'
                              '"mean" makes the mean of token embeddings.')
+    parser.add_argument('--embedding-dir', type=str, default='../embeddings', metavar='str',
+                        help=f'path where to load and save BERT document embeddings')
     parser.add_argument('--model-dir', type=str, default='../models', metavar='str',
                         help=f'path where the BERT model is stored. Dataset name is added')
     parser.add_argument('--force-embeddings', action='store_true', default=False,

@@ -15,6 +15,7 @@ class EmbeddingCustom(nn.Module):
 
         super(EmbeddingCustom, self).__init__()
         assert 0 <= drop_embedding_prop <= 1, 'drop_embedding_prop: wrong range'
+        print(f'working with torch {torch.__version__}')
 
         self.vocab_size = vocab_size
         self.drop_embedding_range = drop_embedding_range

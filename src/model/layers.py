@@ -15,7 +15,6 @@ class EmbeddingCustom(nn.Module):
 
         super(EmbeddingCustom, self).__init__()
         assert 0 <= drop_embedding_prop <= 1, 'drop_embedding_prop: wrong range'
-        print(f'working with torch {torch.__version__}')
 
         self.vocab_size = vocab_size
         self.drop_embedding_range = drop_embedding_range
@@ -28,6 +27,7 @@ class EmbeddingCustom(nn.Module):
             assert pretrained.shape[0] == vocab_size, \
                 f'pre-trained matrix (shape {pretrained.shape}) does not match with the vocabulary size {vocab_size}'
             pretrained_embeddings = nn.Embedding(vocab_size, pretrained_length)
+            # by default, pretrained embeddings are static; this can be modified by calling finetune_pretrained()
             pretrained_embeddings.weight = nn.Parameter(pretrained, requires_grad=False)
 
         learnable_embeddings = None
@@ -40,10 +40,18 @@ class EmbeddingCustom(nn.Module):
         self.pretrained_embeddings = pretrained_embeddings
         self.learnable_embeddings = learnable_embeddings
         self.embedding_length = embedding_length
+        assert self.drop_embedding_range is None or \
+               (0<=self.drop_embedding_range[0]<self.drop_embedding_range[1]<=embedding_length), \
+            'dropout limits out of range'
+
 
     def forward(self, input):
         input = self._embed(input)
-        input = self._embedding_dropout(input)
+        if self.drop_embedding_prop>0:
+            if self.drop_embedding_range is not None:
+                input = self._embedding_dropout_range(input)
+            else:
+                input = F.dropout(input, p=self.drop_embedding_prop, training=self.training)
         return input
 
     def finetune_pretrained(self):
@@ -51,12 +59,19 @@ class EmbeddingCustom(nn.Module):
         self.pretrained_embeddings.weight.requires_grad = True
 
     def _embedding_dropout(self, input):
+        if self.drop_embedding_prop > 0:
+            if self.drop_embedding_range is not None:
+                return self._embedding_dropout_range(input)
+            else:
+                return F.dropout(input, p=self.drop_embedding_prop, training=self.training)
+        return input
+
+    def _embedding_dropout_range(self, input):
         drop_range = self.drop_embedding_range
-        p_drop = self.drop_embedding_prop
-        if p_drop > 0 and self.training and drop_range is not None:
-            p = p_drop
+        p = self.drop_embedding_prop
+        if p > 0 and self.training and drop_range is not None:
             drop_from, drop_to = drop_range
-            m = drop_to - drop_from     #length of the supervised embedding
+            m = drop_to - drop_from     #length of the supervised embedding (or the range)
             l = input.shape[2]          #total embedding length
             corr = (1 - p)
             input[:, :, drop_from:drop_to] = corr * F.dropout(input[:, :, drop_from:drop_to], p=p)

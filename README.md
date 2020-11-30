@@ -19,10 +19,10 @@ in order to improve the performance of neural classifiers.
 * simpletransformers
 
 ## Generating a Word-Class Embedding matrix
-The script _learn_wordlabel_embeddings.py_ generates the WCE matrix from any dataset. The dataset must be in _fastText_ format (i.e., one already-preprocessed document for each line with labels indicated by a prefix `__label__<labelname>`). The WCE matrix is stored in disk in txt format (`<word> <dim1> <dim2> ... <dimn>\n`); support for .bin files will be added soon.
+The script _learn_word_class_embeddings.py_ generates the WCE matrix from any dataset. The dataset must be in _fastText_ format (i.e., one already-preprocessed document for each line with labels indicated by a prefix `__label__<labelname>`). The WCE matrix is stored in disk in txt format (`<word> <dim1> <dim2> ... <dimn>\n`); support for .bin files will be added soon.
 	
 ```
-usage: learn_wordlabel_embeddings.py [-h] [-o OUTPUT] [-m METHOD] [-f MINFREQ]
+usage: learn_word_class_embeddings.py [-h] [-o OUTPUT] [-m METHOD] [-f MINFREQ]
                                      [-d MAXDIM] [-l LABEL] -i INPUT
 
 Learn Word-Class Embeddings from dataset in fastText format

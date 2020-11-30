@@ -18,13 +18,12 @@ def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device):
     net_type=opt.net
     hidden = opt.channels if net_type == 'cnn' else opt.hidden
     #if dropout for embeddings is not set, then use the supervised dropout range and prob
-    if opt.embeddig_drop == 0:
+    if opt.embedding_drop == 0:
         drop_range = sup_range
         drop_prob  = opt.sup_drop
     else:  #if otherwise, ignores the settings for supervised dropout
         drop_range = None
-        drop_prob = opt.embeddig_drop
-
+        drop_prob = opt.embedding_drop
     model = NeuralClassifier(
         net_type,
         output_size=nC,
@@ -45,12 +44,15 @@ def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device):
 
 def set_method_name():
     method_name = opt.net
+    sup_drop = opt.sup_drop if opt.embedding_drop == 0 else -1  # overrided
     if opt.pretrained:
         method_name += f'-{opt.pretrained}'
     if opt.learnable > 0:
         method_name += f'-learn{opt.learnable}'
     if opt.supervised:
-        method_name += f'-supervised-d{opt.sup_drop}-{opt.supervised_method}'
+        method_name += f'-supervised-d{sup_drop}-{opt.supervised_method}'
+    if opt.embedding_drop > 0:
+        method_name += f'-Drop{opt.embedding_drop}'
     if (opt.pretrained or opt.supervised) and opt.tunable:
         method_name+='-tunable'
     if opt.weight_decay > 0:

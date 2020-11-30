@@ -47,11 +47,7 @@ class EmbeddingCustom(nn.Module):
 
     def forward(self, input):
         input = self._embed(input)
-        if self.drop_embedding_prop>0:
-            if self.drop_embedding_range is not None:
-                input = self._embedding_dropout_range(input)
-            else:
-                input = F.dropout(input, p=self.drop_embedding_prop, training=self.training)
+        input = self._embedding_dropout(input)
         return input
 
     def finetune_pretrained(self):

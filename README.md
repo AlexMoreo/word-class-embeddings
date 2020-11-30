@@ -66,48 +66,58 @@ _python main.py -h_
 usage: main.py [-h] [--dataset str] [--batch-size int] [--batch-size-test int]
                [--nepochs int] [--patience int] [--plotmode] [--hidden int]
                [--channels int] [--lr float] [--weight_decay float]
-               [--sup-drop [0.0, 1.0]] [--seed int] [--log-interval int]
-               [--log-file str] [--test-each int] [--checkpoint-dir str]
-               [--net str] [--pretrained glove|word2vec] [--supervised]
-               [--supervised-method dotn|ppmi|ig|chi] [--learnable int]
-               [--val-epochs int] [--word2vec-path str] [--glove-path str]
+               [--sup-drop [0.0, 1.0]] [--embedding-drop [0.0, 1.0]]
+               [--seed int] [--log-interval int] [--log-file str]
+               [--pickle-dir str] [--test-each int] [--checkpoint-dir str]
+               [--net str] [--pretrained glove|word2vec|fasttext]
+               [--supervised] [--supervised-method dotn|ppmi|ig|chi]
+               [--learnable int] [--val-epochs int] [--word2vec-path str]
+               [--glove-path PATH] [--fasttext-path FASTTEXT_PATH]
                [--max-label-space int] [--max-epoch-length int] [--force]
-               [--tunable]
+               [--tunable] [--nozscore]
 
 Neural text classification with Word-Class Embeddings
 
 optional arguments:
   -h, --help            show this help message and exit
-  --dataset str         dataset, one in {'wipo-ml-mg', 'reuters21578',
-                        'ohsumed', 'jrcall', 'rcv1', '20newsgroups', 'wipo-sl-
-                        sc', 'wipo-ml-sc', 'wipo-sl-mg'}
+  --dataset str         dataset, one in {'reuters21578', 'wipo-sl-mg',
+                        '20newsgroups', 'wipo-ml-mg', 'wipo-ml-sc', 'rcv1',
+                        'wipo-sl-sc', 'ohsumed', 'jrcall'}
   --batch-size int      input batch size (default: 100)
   --batch-size-test int
                         batch size for testing (default: 250)
   --nepochs int         number of epochs (default: 200)
   --patience int        patience for early-stop (default: 10)
-  --plotmode            in plot mode executes a long run in order to generate
+  --plotmode            in plot mode, executes a long run in order to generate
                         enough data to produce trend plots (test-each should
                         be >0. This mode is used to produce plots, and does
-                        not perform an evaluation on the test set.
+                        not perform a final evaluation on the test set other
+                        than those performed after test-each epochs).
   --hidden int          hidden lstm size (default: 512)
-  --channels int        number of cnn out-channels (default: 128)
+  --channels int        number of cnn out-channels (default: 256)
   --lr float            learning rate (default: 1e-3)
   --weight_decay float  weight decay (default: 0)
   --sup-drop [0.0, 1.0]
                         dropout probability for the supervised matrix
                         (default: 0.5)
+  --embedding-drop [0.0, 1.0]
+                        dropout probability for the entire embedding matrix;
+                        if specified>0, ignores the value of --sup-drop
+                        (default: 0.0, i.e., deactivated)
   --seed int            random seed (default: 1)
   --log-interval int    how many batches to wait before printing training
                         status
   --log-file str        path to the log csv file
+  --pickle-dir str      if set, specifies the path where to save/load the
+                        dataset pickled (set to None if you prefer not to
+                        retain the pickle file)
   --test-each int       how many epochs to wait before invoking test (default:
                         0, only at the end)
   --checkpoint-dir str  path to the directory containing checkpoints
-  --net str             net, one in {'cnn', 'attn', 'lstm'}
-  --pretrained glove|word2vec
-                        pretrained embeddings, use "glove" or "word2vec"
-                        (default None)
+  --net str             net, one in {'cnn', 'lstm', 'attn'}
+  --pretrained glove|word2vec|fasttext
+                        pretrained embeddings, use "glove", "word2vec", or
+                        "fasttext" (default None)
   --supervised          use supervised embeddings
   --supervised-method dotn|ppmi|ig|chi
                         method used to create the supervised matrix. Available
@@ -119,7 +129,10 @@ optional arguments:
                         set once training is over (default 1)
   --word2vec-path str   path to GoogleNews-vectors-negative300.bin pretrained
                         vectors (used only with --pretrained word2vec)
-  --glove-path str      path to glove.840B.300d pretrained vectors (used only
+  --glove-path PATH     path to glove.840B.300d pretrained vectors (used only
+                        with --pretrained glove)
+  --fasttext-path FASTTEXT_PATH
+                        path to glove.840B.300d pretrained vectors (used only
                         with --pretrained word2vec)
   --max-label-space int
                         larger dimension allowed for the feature-label
@@ -129,8 +142,9 @@ optional arguments:
                         number of (batched) training steps before considering
                         an epoch over (None: full epoch)
   --force               do not check if this experiment has already been run
-  --tunable             pretrained embeddings are tunable from the begining
+  --tunable             pretrained embeddings are tunable from the beginning
                         (default False, i.e., static)
+  --nozscore            disables z-scoring form the computation of WCE
 ```
 
 For example the following command:

@@ -295,6 +295,9 @@ if __name__ == '__main__':
                         help='weight decay (default: 0)')
     parser.add_argument('--sup-drop', type=float, default=0.5, metavar='[0.0, 1.0]',
                         help='dropout probability for the supervised matrix (default: 0.5)')
+    parser.add_argument('--embedding-drop', type=float, default=0.0, metavar='[0.0, 1.0]',
+                        help='dropout probability for the entire embedding matrix; if specified, overrides the value '
+                             'of --sup-drop (default: 0.0)')
     parser.add_argument('--seed', type=int, default=1, metavar='int',
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='int',

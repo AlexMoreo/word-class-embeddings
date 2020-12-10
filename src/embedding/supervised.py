@@ -42,8 +42,6 @@ def supervised_embeddings_tsr(X,Y, tsr_function=information_gain, max_documents=
 
 
 def get_supervised_embeddings(X, Y, max_label_space=300, binary_structural_problems=-1, method='dotn', dozscore=True):
-    print('computing supervised embeddings...')
-
     nC = Y.shape[1]
     if nC==2 and binary_structural_problems > nC:
         raise ValueError('not implemented in this branch')

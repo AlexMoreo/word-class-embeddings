@@ -44,7 +44,6 @@ class EmbeddingCustom(nn.Module):
                (0<=self.drop_embedding_range[0]<self.drop_embedding_range[1]<=embedding_length), \
             'dropout limits out of range'
 
-
     def forward(self, input):
         input = self._embed(input)
         input = self._embedding_dropout(input)
@@ -55,11 +54,14 @@ class EmbeddingCustom(nn.Module):
         self.pretrained_embeddings.weight.requires_grad = True
 
     def _embedding_dropout(self, input):
-        if self.drop_embedding_prop > 0:
-            if self.drop_embedding_range is not None:
-                return self._embedding_dropout_range(input)
-            else:
-                return F.dropout(input, p=self.drop_embedding_prop, training=self.training)
+        if self.droprange():
+            # print('\tapplying dropout-range')
+            return self._embedding_dropout_range(input)
+        elif self.dropfull():
+            # print('\tapplying dropout-full')
+            return F.dropout(input, p=self.drop_embedding_prop, training=self.training)
+        # elif self.dropnone():
+        #     print('\tNO dropout')
         return input
 
     def _embedding_dropout_range(self, input):
@@ -85,6 +87,29 @@ class EmbeddingCustom(nn.Module):
 
     def dim(self):
         return self.embedding_length
+
+    def dropnone(self):
+        if self.drop_embedding_prop == 0:
+            return True
+        if self.drop_embedding_range is None:
+            return True
+        return False
+
+    def dropfull(self):
+        if self.drop_embedding_prop == 0:
+            return False
+        if self.drop_embedding_range == [0, self.dim()]:
+            return True
+        return False
+
+    def droprange(self):
+        if self.drop_embedding_prop == 0:
+            return False
+        if self.drop_embedding_range is None:
+            return False
+        if self.dropfull():
+            return False
+        return True
 
 
 class CNNprojection(nn.Module):

@@ -14,25 +14,58 @@ from time import time
 from embedding.pretrained import *
 
 
+# def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device):
+#     net_type=opt.net
+#     hidden = opt.channels if net_type == 'cnn' else opt.hidden
+#     #if dropout for embeddings is not set, then use the supervised dropout range and prob
+#     if opt.embedding_drop == 0:
+#         drop_range = sup_range
+#         drop_prob  = opt.sup_drop if sup_range is not None else 0
+#     else:  #if otherwise, ignores the settings for supervised dropout
+#         drop_range = None
+#         drop_prob = opt.embedding_drop
+#     model = NeuralClassifier(
+#         net_type,
+#         output_size=nC,
+#         hidden_size=hidden,
+#         vocab_size=vocabsize,
+#         learnable_length=opt.learnable,
+#         pretrained=pretrained_embeddings,
+#         drop_embedding_range=drop_range,
+#         drop_embedding_prop=drop_prob)
+#
+#     model.xavier_uniform()
+#     model = model.to(device)
+#     if opt.tunable:
+#         model.finetune_pretrained()
+#
+#     return model
+
 def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device):
     net_type=opt.net
     hidden = opt.channels if net_type == 'cnn' else opt.hidden
-    #if dropout for embeddings is not set, then use the supervised dropout range and prob
-    if opt.embedding_drop == 0:
+    if opt.droptype == 'sup':
         drop_range = sup_range
-        drop_prob  = opt.sup_drop
-    else:  #if otherwise, ignores the settings for supervised dropout
+    elif opt.droptype == 'learn':
+        drop_range = [pretrained_embeddings.shape[1], pretrained_embeddings.shape[1]+opt.learnable]
+    elif opt.droptype == 'none':
         drop_range = None
-        drop_prob = opt.embedding_drop
+    elif opt.droptype == 'full':
+        drop_range = [0, pretrained_embeddings.shape[1]+opt.learnable]
+
+    print('droptype =', opt.droptype)
+    print('droprange =', drop_range)
+    print('dropprob =', opt.dropprob)
+
     model = NeuralClassifier(
         net_type,
         output_size=nC,
         hidden_size=hidden,
         vocab_size=vocabsize,
         learnable_length=opt.learnable,
-        pretrained = pretrained_embeddings,
+        pretrained=pretrained_embeddings,
         drop_embedding_range=drop_range,
-        drop_embedding_prop=drop_prob)
+        drop_embedding_prop=opt.dropprob)
 
     model.xavier_uniform()
     model = model.to(device)
@@ -44,15 +77,17 @@ def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device):
 
 def set_method_name():
     method_name = opt.net
-    sup_drop = opt.sup_drop if opt.embedding_drop == 0 else -1  # overrided
+
     if opt.pretrained:
         method_name += f'-{opt.pretrained}'
     if opt.learnable > 0:
         method_name += f'-learn{opt.learnable}'
     if opt.supervised:
+        sup_drop = 0 if opt.droptype != 'sup' else opt.dropprob
         method_name += f'-supervised-d{sup_drop}-{opt.supervised_method}'
-    if opt.embedding_drop > 0:
-        method_name += f'-Drop{opt.embedding_drop}'
+    if opt.dropprob > 0:
+        if opt.droptype != 'sup':
+            method_name += f'-Drop{opt.droptype}{opt.dropprob}'
     if (opt.pretrained or opt.supervised) and opt.tunable:
         method_name+='-tunable'
     if opt.weight_decay > 0:
@@ -94,14 +129,13 @@ def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabula
         pretrained_embeddings = []
 
         if pretrained is not None:
-            print('\t[pretrained-matrix]')
             word_list = get_word_list(word2index, out_of_vocabulary)
             weights = pretrained.extract(word_list)
             pretrained_embeddings.append(weights)
+            print('\t[pretrained-matrix] ', weights.shape)
             del pretrained
 
         if opt.supervised:
-            print('\t[supervised-matrix]')
             Xtr, _ = dataset.vectorize()
             Ytr = dataset.devel_labelmatrix
             F = get_supervised_embeddings(Xtr, Ytr,
@@ -111,7 +145,7 @@ def embedding_matrix(dataset, pretrained, vocabsize, word2index, out_of_vocabula
             num_missing_rows = vocabsize - F.shape[0]
             F = np.vstack((F, np.zeros(shape=(num_missing_rows, F.shape[1]))))
             F = torch.from_numpy(F).float()
-            print(f'\tsupervised-matris has shape={F.shape}')
+            print('\t[supervised-matrix]', F.shape)
 
             offset = 0
             if pretrained_embeddings:
@@ -279,6 +313,7 @@ def test(model, test_index, yte, pad_index, classification_type, tinit, epoch, l
 
 if __name__ == '__main__':
     available_datasets = Dataset.dataset_available
+    available_dropouts = {'sup','none','full','learn'}
 
     # Training settings
     parser = argparse.ArgumentParser(description='Neural text classification with Word-Class Embeddings')
@@ -304,11 +339,19 @@ if __name__ == '__main__':
                         help='learning rate (default: 1e-3)')
     parser.add_argument('--weight_decay', type=float, default=0, metavar='float',
                         help='weight decay (default: 0)')
-    parser.add_argument('--sup-drop', type=float, default=0.5, metavar='[0.0, 1.0]',
-                        help='dropout probability for the supervised matrix (default: 0.5)')
-    parser.add_argument('--embedding-drop', type=float, default=0.0, metavar='[0.0, 1.0]',
-                        help='dropout probability for the entire embedding matrix; if specified>0, ignores the value '
-                             'of --sup-drop (default: 0.0, i.e., deactivated)')
+    parser.add_argument('--droptype', type=str, default='sup', metavar='DROPTYPE',
+                        help=f'chooses the type of dropout to apply after the embedding layer. Default is "sup" which '
+                             f'only applies to word-class embeddings (if present). Other options include "none" which '
+                             f'does not apply dropout (same as "sup" with no supervised embeddings), "full" which '
+                             f'applies dropout to the entire embedding, or "learn" that applies dropout only to the '
+                             f'learnable embedding.')
+    parser.add_argument('--dropprob', type=float, default=0.5, metavar='[0.0, 1.0]',
+                        help='dropout probability (default: 0.5)')
+    # parser.add_argument('--sup-drop', type=float, default=0.5, metavar='[0.0, 1.0]',
+    #                     help='dropout probability for the supervised matrix (default: 0.5)')
+    # parser.add_argument('--embedding-drop', type=float, default=0.0, metavar='[0.0, 1.0]',
+    #                     help='dropout probability for the entire embedding matrix; if specified>0, ignores the value '
+    #                          'of --sup-drop (default: 0.0, i.e., deactivated)')
     parser.add_argument('--seed', type=int, default=1, metavar='int',
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='int',
@@ -372,6 +415,15 @@ if __name__ == '__main__':
         'plot mode implies --test-each>0'
     assert opt.supervised_method in STWFUNCTIONS, \
         f'unknown supervised term weighting function; allowed are {STWFUNCTIONS}'
+    assert opt.droptype in available_dropouts, \
+        f'unknown dropout type; allowed are {available_dropouts}'
+    if opt.droptype == 'sup' and opt.supervised==False:
+        opt.droptype = 'none'
+        print('warning: droptype="sup" but supervised="False"; the droptype changed to "none"')
+    if opt.droptype == 'learn' and opt.learnable==0:
+        opt.droptype = 'none'
+        print('warning: droptype="learn" but learnable=0; the droptype changed to "none"')
+
     if opt.pickle_dir:
         opt.pickle_path = join(opt.pickle_dir, f'{opt.dataset}.pickle')
 

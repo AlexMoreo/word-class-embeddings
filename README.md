@@ -66,23 +66,22 @@ _python main.py -h_
 usage: main.py [-h] [--dataset str] [--batch-size int] [--batch-size-test int]
                [--nepochs int] [--patience int] [--plotmode] [--hidden int]
                [--channels int] [--lr float] [--weight_decay float]
-               [--sup-drop [0.0, 1.0]] [--embedding-drop [0.0, 1.0]]
-               [--seed int] [--log-interval int] [--log-file str]
-               [--pickle-dir str] [--test-each int] [--checkpoint-dir str]
-               [--net str] [--pretrained glove|word2vec|fasttext]
-               [--supervised] [--supervised-method dotn|ppmi|ig|chi]
-               [--learnable int] [--val-epochs int] [--word2vec-path str]
-               [--glove-path PATH] [--fasttext-path FASTTEXT_PATH]
-               [--max-label-space int] [--max-epoch-length int] [--force]
-               [--tunable] [--nozscore]
+               [--droptype DROPTYPE] [--dropprob [0.0, 1.0]] [--seed int]
+               [--log-interval int] [--log-file str] [--pickle-dir str]
+               [--test-each int] [--checkpoint-dir str] [--net str]
+               [--pretrained glove|word2vec|fasttext] [--supervised]
+               [--supervised-method dotn|ppmi|ig|chi] [--learnable int]
+               [--val-epochs int] [--word2vec-path str] [--glove-path PATH]
+               [--fasttext-path FASTTEXT_PATH] [--max-label-space int]
+               [--max-epoch-length int] [--force] [--tunable] [--nozscore]
 
 Neural text classification with Word-Class Embeddings
 
 optional arguments:
   -h, --help            show this help message and exit
-  --dataset str         dataset, one in {'reuters21578', 'wipo-sl-mg',
-                        '20newsgroups', 'wipo-ml-mg', 'wipo-ml-sc', 'rcv1',
-                        'wipo-sl-sc', 'ohsumed', 'jrcall'}
+  --dataset str         dataset, one in {'wipo-sl-sc', 'jrcall', 'ohsumed',
+                        'rcv1', '20newsgroups', 'wipo-sl-mg', 'reuters21578',
+                        'wipo-ml-mg', 'wipo-ml-sc'}
   --batch-size int      input batch size (default: 100)
   --batch-size-test int
                         batch size for testing (default: 250)
@@ -97,13 +96,15 @@ optional arguments:
   --channels int        number of cnn out-channels (default: 256)
   --lr float            learning rate (default: 1e-3)
   --weight_decay float  weight decay (default: 0)
-  --sup-drop [0.0, 1.0]
-                        dropout probability for the supervised matrix
-                        (default: 0.5)
-  --embedding-drop [0.0, 1.0]
-                        dropout probability for the entire embedding matrix;
-                        if specified>0, ignores the value of --sup-drop
-                        (default: 0.0, i.e., deactivated)
+  --droptype DROPTYPE   chooses the type of dropout to apply after the
+                        embedding layer. Default is "sup" which only applies
+                        to word-class embeddings (if present). Other options
+                        include "none" which does not apply dropout (same as
+                        "sup" with no supervised embeddings), "full" which
+                        applies dropout to the entire embedding, or "learn"
+                        that applies dropout only to the learnable embedding.
+  --dropprob [0.0, 1.0]
+                        dropout probability (default: 0.5)
   --seed int            random seed (default: 1)
   --log-interval int    how many batches to wait before printing training
                         status
@@ -114,7 +115,7 @@ optional arguments:
   --test-each int       how many epochs to wait before invoking test (default:
                         0, only at the end)
   --checkpoint-dir str  path to the directory containing checkpoints
-  --net str             net, one in {'cnn', 'lstm', 'attn'}
+  --net str             net, one in {'lstm', 'cnn', 'attn'}
   --pretrained glove|word2vec|fasttext
                         pretrained embeddings, use "glove", "word2vec", or
                         "fasttext" (default None)

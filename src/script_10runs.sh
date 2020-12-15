@@ -13,21 +13,21 @@ dataset="--dataset 20newsgroups"
 $PY $LOG $dataset	$CNN	--learnable 200	--channels 256 --seed $run
 $PY $LOG $dataset	$CNN	--channels 128	--pretrained glove --seed $run
 $PY $LOG $dataset	$CNN	--channels 128	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$CNN	--learnable 20	--channels 128	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$CNN	--learnable 20	--channels 128	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$CNN	--channels 128	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$CNN	--channels 128	--pretrained glove	--supervised	--tunable --seed $run
 
 $PY $LOG $dataset	$LSTM	--learnable 200	--hidden 256 --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$LSTM	--learnable 20	--hidden 256	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$LSTM	--learnable 20	--hidden 256	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$LSTM	--hidden 2048	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 1024	--pretrained glove	--supervised	--tunable --seed $run
 
 $PY $LOG $dataset	$ATTN	--learnable 200	--hidden 256 --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$ATTN	--learnable 20	--hidden 256	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$ATTN	--learnable 20	--hidden 256	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove	--supervised	--tunable --seed $run
 
@@ -35,21 +35,21 @@ dataset="--dataset jrcall"
 $PY $LOG $dataset	$CNN	--learnable 200	--channels 512 --seed $run
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove --seed $run
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$CNN	--learnable 300	--channels 512	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$CNN	--learnable 300	--channels 512	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--supervised	--tunable --seed $run
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--supervised --seed $run
 
 $PY $LOG $dataset	$LSTM	--learnable 50	--hidden 1024 --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$LSTM	--learnable 300	--hidden 256	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$LSTM	--learnable 300	--hidden 256	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--supervised	--tunable --seed $run
 
 $PY $LOG $dataset	$ATTN	--learnable 200	--hidden 1024	 --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$ATTN	--learnable 300	--hidden 256	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$ATTN	--learnable 300	--hidden 256	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$ATTN	--sup-drop 0.2	--hidden 256	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove	--supervised	--tunable --seed $run
 
@@ -57,21 +57,21 @@ dataset="--dataset ohsumed"
 $PY $LOG $dataset	$CNN	--learnable 200	--channels 512 --seed $run
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove --seed $run
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$CNN	--learnable 23	--channels 512	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$CNN	--learnable 23	--channels 512	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$CNN	--channels 256	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$CNN	--channels 256	--pretrained glove	--supervised	--tunable --seed $run
 
 $PY $LOG $dataset	$LSTM	--learnable 200 --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 2048	--pretrained glove --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 1024	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$LSTM	--learnable 23	--hidden 1024	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$LSTM	--learnable 23	--hidden 1024	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$LSTM	--hidden 1024	--pretrained glove	--supervised	--tunable --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 2048	--pretrained glove	--supervised --seed $run
 
 $PY $LOG $dataset	$ATTN	--learnable 200	 --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$ATTN	--learnable 23	--hidden 1024	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$ATTN	--learnable 23	--hidden 1024	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$ATTN	--sup-drop 0.2	--hidden 256	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove	--supervised	--tunable --seed $run
 
@@ -79,21 +79,21 @@ dataset="--dataset rcv1"
 $PY $LOG $dataset	$CNN	--learnable 200	--channels 512 --seed $run
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove --seed $run
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$CNN	--learnable 101	--channels 512	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$CNN	--learnable 101	--channels 512	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$CNN	--channels 256	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$CNN	--channels 256	--pretrained glove	--supervised	--tunable --seed $run
 
 $PY $LOG $dataset	$LSTM	--learnable 200 --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 2048	--pretrained glove --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 1024	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$LSTM	--learnable 101	--hidden 1024	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$LSTM	--learnable 101	--hidden 1024	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$LSTM	--hidden 1024	--pretrained glove	--supervised	--tunable --seed $run
 $PY $LOG $dataset	$LSTM	--hidden 2048	--pretrained glove	--supervised --seed $run
 
 $PY $LOG $dataset	$ATTN	--learnable 200	--hidden 256 --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 2048	--pretrained glove --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove	--tunable --seed $run
-$PY $LOG $dataset	$ATTN	--learnable 101	--hidden 1024	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$ATTN	--learnable 101	--hidden 1024	--pretrained glove	--tunable --seed $run --droptype learn
 $PY $LOG $dataset	$ATTN	--sup-drop 0.2	--pretrained glove	--supervised --seed $run
 $PY $LOG $dataset	$ATTN	--hidden 512	--pretrained glove	--supervised	--tunable --seed $run
 
@@ -101,45 +101,45 @@ dataset="--dataset wipo-sl-sc"
 $PY $LOG $dataset	$CNN	--learnable 200	--channels 128 --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--tunable --seed $run --max-epoch-length 300
-$PY $LOG $dataset	$CNN	--learnable 300	--channels 512	--pretrained glove	--tunable --seed $run --max-epoch-length 300
+$PY $LOG $dataset	$CNN	--learnable 300	--channels 512	--pretrained glove	--tunable --seed $run --max-epoch-length 300 --droptype learn
 $PY $LOG $dataset	$CNN	--sup-drop 0.2	--channels 512	--pretrained glove	--supervised --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--supervised	--tunable --seed $run --max-epoch-length 300
 
 $PY $LOG $dataset	$LSTM	--learnable 200 --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$LSTM	--hidden 1024	--pretrained glove --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$LSTM	--hidden 1024	--pretrained glove	--tunable --seed $run --max-epoch-length 300
-$PY $LOG $dataset	$LSTM	--learnable 300	--hidden 1024	--pretrained glove	--tunable --seed $run --max-epoch-length 300
+$PY $LOG $dataset	$LSTM	--learnable 300	--hidden 1024	--pretrained glove	--tunable --seed $run --max-epoch-length 300 --droptype learn
 $PY $LOG $dataset	$LSTM	--sup-drop 0.2	--pretrained glove	--supervised --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$LSTM	--hidden 512	--pretrained glove	--supervised	--tunable --seed $run --max-epoch-length 300
 
 $PY $LOG $dataset	$ATTN	--learnable 200	--hidden 256	 --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove	--tunable --seed $run --max-epoch-length 300
-$PY $LOG $dataset	$ATTN	--learnable 300	--hidden 1024	--pretrained glove	--tunable --seed $run --max-epoch-length 300
+$PY $LOG $dataset	$ATTN	--learnable 300	--hidden 1024	--pretrained glove	--tunable --seed $run --max-epoch-length 300 --droptype learn
 $PY $LOG $dataset	$ATTN	--sup-drop 0.2	--pretrained glove	--supervised --seed $run --max-epoch-length 300
 $PY $LOG $dataset	$ATTN	--hidden 512	--pretrained glove	--supervised	--tunable --seed $run --max-epoch-length 300
 #
 dataset="--dataset reuters21578"
-$PY $LOG $dataset	$CNN	--learnable 200	--channels 256
-$PY $LOG $dataset	$CNN	--channels 256	--pretrained glove
-$PY $LOG $dataset	$CNN	--channels 256	--pretrained glove	--tunable
-$PY $LOG $dataset	$CNN	--learnable 115	--channels 256	--pretrained glove	--tunable
-$PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--supervised
-$PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--supervised	--tunable
+$PY $LOG $dataset	$CNN	--learnable 200	--channels 256 --seed $run
+$PY $LOG $dataset	$CNN	--channels 256	--pretrained glove --seed $run
+$PY $LOG $dataset	$CNN	--channels 256	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$CNN	--learnable 115	--channels 256	--pretrained glove	--tunable --seed $run --droptype learn
+$PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--supervised --seed $run
+$PY $LOG $dataset	$CNN	--channels 512	--pretrained glove	--supervised	--tunable --seed $run
 
-$PY $LOG $dataset	$LSTM	--learnable 200
-$PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove
-$PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--tunable
-$PY $LOG $dataset	$LSTM	--learnable 115	--hidden 256	--pretrained glove	--tunable
-$PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--supervised
-$PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--supervised	--tunable
+$PY $LOG $dataset	$LSTM	--learnable 200 --seed $run
+$PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove --seed $run
+$PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$LSTM	--learnable 115	--hidden 256	--pretrained glove	--tunable --seed $run --droptype learn
+$PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--supervised --seed $run
+$PY $LOG $dataset	$LSTM	--hidden 256	--pretrained glove	--supervised	--tunable --seed $run
 
-$PY $LOG $dataset	$ATTN	--learnable 200	--hidden 256
-$PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove
-$PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove	--tunable
-$PY $LOG $dataset	$ATTN	--learnable 115	--hidden 1024	--pretrained glove	--tunable
-$PY $LOG $dataset	$ATTN	--sup-drop 0.2	--hidden 256	--pretrained glove	--supervised
-$PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove	--supervised	--tunable
+$PY $LOG $dataset	$ATTN	--learnable 200	--hidden 256 --seed $run
+$PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove --seed $run
+$PY $LOG $dataset	$ATTN	--hidden 1024	--pretrained glove	--tunable --seed $run
+$PY $LOG $dataset	$ATTN	--learnable 115	--hidden 1024	--pretrained glove	--tunable --seed $run --droptype learn
+$PY $LOG $dataset	$ATTN	--sup-drop 0.2	--hidden 256	--pretrained glove	--supervised --seed $run
+$PY $LOG $dataset	$ATTN	--hidden 256	--pretrained glove	--supervised	--tunable --seed $run
 
 
 common="--dataset-dir ../fasttext/dataset --log-file ../log/fasttext.10runs.csv"

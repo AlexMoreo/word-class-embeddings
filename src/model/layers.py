@@ -55,13 +55,9 @@ class EmbeddingCustom(nn.Module):
 
     def _embedding_dropout(self, input):
         if self.droprange():
-            # print('\tapplying dropout-range')
             return self._embedding_dropout_range(input)
         elif self.dropfull():
-            # print('\tapplying dropout-full')
             return F.dropout(input, p=self.drop_embedding_prop, training=self.training)
-        # elif self.dropnone():
-        #     print('\tNO dropout')
         return input
 
     def _embedding_dropout_range(self, input):

@@ -14,33 +14,6 @@ from time import time
 from embedding.pretrained import *
 
 
-# def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device):
-#     net_type=opt.net
-#     hidden = opt.channels if net_type == 'cnn' else opt.hidden
-#     #if dropout for embeddings is not set, then use the supervised dropout range and prob
-#     if opt.embedding_drop == 0:
-#         drop_range = sup_range
-#         drop_prob  = opt.sup_drop if sup_range is not None else 0
-#     else:  #if otherwise, ignores the settings for supervised dropout
-#         drop_range = None
-#         drop_prob = opt.embedding_drop
-#     model = NeuralClassifier(
-#         net_type,
-#         output_size=nC,
-#         hidden_size=hidden,
-#         vocab_size=vocabsize,
-#         learnable_length=opt.learnable,
-#         pretrained=pretrained_embeddings,
-#         drop_embedding_range=drop_range,
-#         drop_embedding_prop=drop_prob)
-#
-#     model.xavier_uniform()
-#     model = model.to(device)
-#     if opt.tunable:
-#         model.finetune_pretrained()
-#
-#     return model
-
 def init_Net(nC, vocabsize, pretrained_embeddings, sup_range, device):
     net_type=opt.net
     hidden = opt.channels if net_type == 'cnn' else opt.hidden
@@ -347,11 +320,6 @@ if __name__ == '__main__':
                              f'learnable embedding.')
     parser.add_argument('--dropprob', type=float, default=0.5, metavar='[0.0, 1.0]',
                         help='dropout probability (default: 0.5)')
-    # parser.add_argument('--sup-drop', type=float, default=0.5, metavar='[0.0, 1.0]',
-    #                     help='dropout probability for the supervised matrix (default: 0.5)')
-    # parser.add_argument('--embedding-drop', type=float, default=0.0, metavar='[0.0, 1.0]',
-    #                     help='dropout probability for the entire embedding matrix; if specified>0, ignores the value '
-    #                          'of --sup-drop (default: 0.0, i.e., deactivated)')
     parser.add_argument('--seed', type=int, default=1, metavar='int',
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='int',
